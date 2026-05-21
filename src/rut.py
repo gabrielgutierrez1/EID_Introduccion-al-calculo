@@ -1,3 +1,8 @@
+import re
+
+FORMATO_RUT = "Formato: 12.345.678-5, 12345678-5 o 123456785"
+
+
 def limpiar_rut(rut):
     """Elimina puntos, guion y espacios; deja el DV en mayuscula."""
     rut_limpio = ""
@@ -9,7 +14,30 @@ def limpiar_rut(rut):
     return rut_limpio
 
 
+def validar_formato_rut(rut):
+    rut_texto = rut.strip()
+
+    if not rut_texto:
+        return "Debes ingresar un RUT."
+
+    formatos_validos = [
+        r"^\d{2}\.\d{3}\.\d{3}-[\dkK]$",
+        r"^\d{8}-[\dkK]$",
+        r"^\d{8}[\dkK]$",
+    ]
+
+    for formato in formatos_validos:
+        if re.fullmatch(formato, rut_texto):
+            return None
+
+    return f"El formato ingresado no es correcto. {FORMATO_RUT}."
+
 def separar_rut(rut):
+    error_formato = validar_formato_rut(rut)
+
+    if error_formato:
+        return None, None, error_formato
+
     rut_limpio = limpiar_rut(rut)
 
     if len(rut_limpio) < 2:
