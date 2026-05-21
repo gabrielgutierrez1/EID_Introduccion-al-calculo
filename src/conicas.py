@@ -124,12 +124,159 @@ def ecuacion_general(coeficientes):
     return " ".join(partes) + " = 0"
 
 
+def transformar_a_canonica(coeficientes, tipo=None):
+    A = coeficientes["A"]
+    B = coeficientes["B"]
+    C = coeficientes["C"]
+    D = coeficientes["D"]
+    E = coeficientes["E"]
+
+    pasos = []
+    pasos.append(f"Partimos de la ecuacion general: {ecuacion_general(coeficientes)}")
+
+    # Caso degenerate: sin terminos cuadraticos
+    if (A == 0) and (B == 0):
+        pasos.append("No hay terminos cuadraticos A = 0 y B = 0: no es una conica de segundo grado.")
+        return {"pasos": pasos, "forma_canonica": None}
+
+    # Completar cuadrados cuando A y B no son cero
+    hx = None
+    ky = None
+    if A != 0:
+        rx = C / (2 * A)
+        const_x = (C * C) / (4 * A)
+        pasos.append(
+            f"Completar el cuadrado en x: A(x^2 + (C/A) x) => A[(x + {formatear_numero(rx)})^2 - ({formatear_numero(rx)})^2] = A(x + {formatear_numero(rx)})^2 - {formatear_numero(const_x)}"
+        )
+        hx = -C / (2 * A)
+
+    if B != 0:
+        ry = D / (2 * B)
+        const_y = (D * D) / (4 * B)
+        pasos.append(
+            f"Completar el cuadrado en y: B(y^2 + (D/B) y) => B[(y + {formatear_numero(ry)})^2 - ({formatear_numero(ry)})^2] = B(y + {formatear_numero(ry)})^2 - {formatear_numero(const_y)}"
+        )
+        ky = -D / (2 * B)
+
+    # Si ambos cuadrados fueron completados, construir RHS
+    forma = None
+    try:
+        rhs = 0.0
+        if A != 0:
+            rhs += (C * C) / (4 * A)
+        if B != 0:
+            rhs += (D * D) / (4 * B)
+        rhs -= E
+
+        if (A != 0) and (B != 0):
+            pasos.append(
+                f"Traslacion: x0 = {formatear_numero(hx)}, y0 = {formatear_numero(ky)}"
+            )
+            pasos.append(
+                f"La ecuacion se convierte en: {formatear_numero(A)}(x + {formatear_numero(C/(2*A))})^2 + {formatear_numero(B)}(y + {formatear_numero(D/(2*B))})^2 = {formatear_numero(rhs)}"
+            )
+
+            # Clasificar y escribir forma canonica segun signos
+            if A * B > 0:
+                # Elipse o circunferencia (mismo signo)
+                denom_x = rhs / A if A != 0 else None
+                denom_y = rhs / B if B != 0 else None
+                pasos.append(
+                    f"Dividimos entre {formatear_numero(rhs)} para obtener 1 en el lado derecho y obtenemos la forma con denominadores:"
+                )
+                if denom_x is None or denom_y is None:
+                    forma = None
+                else:
+                    forma = (
+                        f"(x + {formatear_numero(C/(2*A))})^2 / {formatear_numero(denom_x)} + "
+                        f"(y + {formatear_numero(D/(2*B))})^2 / {formatear_numero(denom_y)} = 1"
+                    )
+                    pasos.append(f"Forma canonica: {forma}")
+
+            else:
+                # Hiperbola (signos opuestos)
+                pasos.append("Como A y B tienen signos opuestos se obtiene una hipérbola.")
+                # Determinar termino positivo primero
+                if A > 0:
+                    a2 = rhs / A
+                    b2 = -rhs / B
+                    forma = (
+                        f"(x + {formatear_numero(C/(2*A))})^2 / {formatear_numero(a2)} - "
+                        f"(y + {formatear_numero(D/(2*B))})^2 / {formatear_numero(b2)} = 1"
+                    )
+                else:
+                    a2 = -rhs / A
+                    b2 = rhs / B
+                    forma = (
+                        f"(y + {formatear_numero(D/(2*B))})^2 / {formatear_numero(b2)} - "
+                        f"(x + {formatear_numero(C/(2*A))})^2 / {formatear_numero(a2)} = 1"
+                    )
+                pasos.append(f"Forma canonica: {forma}")
+
+        else:
+            # Caso parabola: uno de A o B es cero
+            pasos.append("Al menos uno de los coeficientes cuadraticos es cero: cónica tipo parábola potencial.")
+            if A == 0 and B != 0:
+                # Resolver para x en funcion de y
+                if C == 0:
+                    pasos.append("No hay termino lineal en x (C = 0): la ecuacion no permite aislar x -> degenerada o no estandar.")
+                    forma = None
+                else:
+                    k = D / (2 * B)
+                    beta = (D * D) / (4 * B) - E
+                    h = beta / C
+                    pasos.append(
+                        f"Completar el cuadrado en y da B(y + {formatear_numero(D/(2*B))})^2 - {formatear_numero((D*D)/(4*B))}; reordenando se obtiene:"
+                    )
+                    pasos.append(
+                        f"x = {formatear_numero(-B/C)}(y + {formatear_numero(k)})^2 + {formatear_numero(h)}"
+                    )
+                    pasos.append(
+                        f"Reescribiendo como forma canónica: (y + {formatear_numero(k)})^2 = {formatear_numero(-C/B)} (x - {formatear_numero(h)})"
+                    )
+                    forma = (
+                        f"(y + {formatear_numero(k)})^2 = {formatear_numero(-C/B)} (x - {formatear_numero(h)})"
+                    )
+
+            elif B == 0 and A != 0:
+                # Resolver para y en funcion de x
+                if D == 0:
+                    pasos.append("No hay termino lineal en y (D = 0): la ecuacion no permite aislar y -> degenerada o no estandar.")
+                    forma = None
+                else:
+                    h = C / (2 * A)
+                    beta = (C * C) / (4 * A) - E
+                    k = beta / D
+                    pasos.append(
+                        f"Completar el cuadrado en x da A(x + {formatear_numero(C/(2*A))})^2 - {formatear_numero((C*C)/(4*A))}; reordenando se obtiene:"
+                    )
+                    pasos.append(
+                        f"y = {formatear_numero(-A/D)}(x + {formatear_numero(h)})^2 + {formatear_numero(k)}"
+                    )
+                    pasos.append(
+                        f"Reescribiendo como forma canónica: (x + {formatear_numero(h)})^2 = {formatear_numero(-D/A)} (y - {formatear_numero(k)})"
+                    )
+                    forma = (
+                        f"(x + {formatear_numero(h)})^2 = {formatear_numero(-D/A)} (y - {formatear_numero(k)})"
+                    )
+
+    except Exception:
+        pasos.append("No fue posible completar la transformacion debido a un error numerico (division por cero u otra condicion).")
+        forma = None
+
+    return {"pasos": pasos, "forma_canonica": forma}
+
+
 def analizar_conica(digitos, dv):
     coeficientes = construir_coeficientes(digitos, dv)
     tipo = clasificar_conica(coeficientes)
+
+    # Transformacion a forma canonica (paso a paso)
+    transformacion = transformar_a_canonica(coeficientes, tipo)
 
     return {
         "coeficientes": coeficientes,
         "tipo": tipo,
         "ecuacion_general": ecuacion_general(coeficientes),
+        "forma_canonica": transformacion,
     }

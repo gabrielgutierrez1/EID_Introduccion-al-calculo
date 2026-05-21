@@ -37,3 +37,16 @@ def mostrar_conica(resultado):
     print()
     print(f"Ecuacion general: {resultado['ecuacion_general']}")
     print(f"Clasificacion: {resultado['tipo']}")
+    # Mostrar transformacion a forma canonica si existe
+    if "forma_canonica" in resultado and resultado["forma_canonica"]:
+        transform = resultado["forma_canonica"]
+        if transform.get("pasos"):
+            print()
+            print("Transformacion a forma canonica:")
+            for paso in transform["pasos"]:
+                print(paso)
+
+        forma = transform.get("forma_canonica")
+        if forma:
+            print()
+            print(f"Forma canonica: {forma}")
