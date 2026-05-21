@@ -1,9 +1,10 @@
 from src.conicas import analizar_conica
-from src.rut import obtener_digitos, validar_rut
+from src.rut import FORMATO_RUT, obtener_digitos, validar_rut
 from src.salida import mostrar_conica, mostrar_validacion
 
 
 def main():
+    print(FORMATO_RUT)
     rut_usuario = input("Ingresa un RUT chileno: ")
     resultado_validacion = validar_rut(rut_usuario)
     mostrar_validacion(resultado_validacion)
