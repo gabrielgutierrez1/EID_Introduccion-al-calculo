@@ -184,7 +184,10 @@ def transformar_a_canonica(coeficientes, tipo=None):
                 pasos.append(
                     f"Dividimos entre {formatear_numero(rhs)} para obtener 1 en el lado derecho y obtenemos la forma con denominadores:"
                 )
-                if denom_x is None or denom_y is None:
+                if rhs == 0:
+                    pasos.append("El lado derecho queda 0, por lo que no se puede dividir para obtener una forma canonica estandar igual a 1.")
+                    forma = None
+                elif denom_x is None or denom_y is None:
                     forma = None
                 else:
                     forma = (
@@ -197,7 +200,10 @@ def transformar_a_canonica(coeficientes, tipo=None):
                 # Hiperbola (signos opuestos)
                 pasos.append("Como A y B tienen signos opuestos se obtiene una hipérbola.")
                 # Determinar termino positivo primero
-                if A > 0:
+                if rhs == 0:
+                    pasos.append("El lado derecho queda 0, por lo que no se puede dividir para obtener una forma canonica estandar igual a 1.")
+                    forma = None
+                elif A / rhs > 0:
                     a2 = rhs / A
                     b2 = -rhs / B
                     forma = (
@@ -205,13 +211,14 @@ def transformar_a_canonica(coeficientes, tipo=None):
                         f"(y + {formatear_numero(D/(2*B))})^2 / {formatear_numero(b2)} = 1"
                     )
                 else:
-                    a2 = -rhs / A
-                    b2 = rhs / B
+                    a2 = rhs / B
+                    b2 = -rhs / A
                     forma = (
-                        f"(y + {formatear_numero(D/(2*B))})^2 / {formatear_numero(b2)} - "
-                        f"(x + {formatear_numero(C/(2*A))})^2 / {formatear_numero(a2)} = 1"
+                        f"(y + {formatear_numero(D/(2*B))})^2 / {formatear_numero(a2)} - "
+                        f"(x + {formatear_numero(C/(2*A))})^2 / {formatear_numero(b2)} = 1"
                     )
-                pasos.append(f"Forma canonica: {forma}")
+                if forma:
+                    pasos.append(f"Forma canonica: {forma}")
 
         else:
             # Caso parabola: uno de A o B es cero
