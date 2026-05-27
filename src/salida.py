@@ -50,3 +50,11 @@ def mostrar_conica(resultado):
         if forma:
             print()
             print(f"Forma canonica: {forma}")
+
+    if "canonica_a_general" in resultado and resultado["canonica_a_general"]:
+        inversa = resultado["canonica_a_general"]
+        if inversa.get("pasos"):
+            print()
+            print("Transformacion inversa: forma canonica a general:")
+            for paso in inversa["pasos"]:
+                print(paso)
