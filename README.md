@@ -29,7 +29,6 @@ Luego ingresar un RUT chileno con cuerpo de 8 digitos, por ejemplo:
 ```text
 calculo_eid/
 ├─ main.py
-├─ eid_calculo.py
 ├─ src/
 │  ├─ __init__.py
 │  ├─ rut.py
@@ -78,10 +77,6 @@ Tambien aplica las reglas especiales del enunciado y clasifica la conica como:
 
 Contiene funciones para mostrar el procedimiento paso a paso en consola.
 
-### `eid_calculo.py`
-
-Archivo puente para ejecutar el mismo programa desde el nombre inicial del proyecto.
-
 ## Funcionalidades implementadas
 
 - Validacion de RUT chileno mediante modulo 11.
@@ -91,11 +86,11 @@ Archivo puente para ejecutar el mismo programa desde el nombre inicial del proye
 - Aplicacion de reglas especiales para obtener distintas conicas.
 - Clasificacion automatica de la conica.
 - Impresion ordenada de la ecuacion general.
+- Transformacion paso a paso desde forma general a forma canonica.
+- Procedimiento inverso desde forma canonica a forma general.
 
 ## Funcionalidades pendientes
 
-- Transformacion paso a paso desde forma general a forma canonica.
-- Procedimiento inverso desde forma canonica a forma general.
 - Grafica de la conica.
 - Modulo de funciones por tramos.
 - Analisis de limites laterales, continuidad y discontinuidades.
