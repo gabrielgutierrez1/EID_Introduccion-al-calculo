@@ -47,6 +47,7 @@ EID_Introduccion-al-calculo/
 │  ├─ __init__.py
 │  ├─ rut.py
 │  ├─ conicas.py
+│  ├─ canonica_a_general.py
 │  └─ salida.py
 ├─ .gitignore
 └─ README.md
@@ -110,8 +111,11 @@ Ademas contiene funciones para:
 - Formatear numeros para la salida.
 - Construir la ecuacion general.
 - Transformar la ecuacion general a forma canonica completando cuadrados.
-- Realizar el procedimiento inverso desde forma canonica a forma general.
 - Manejar casos no estandar o degenerados cuando no se puede obtener una forma canonica comun.
+
+### `src/canonica_a_general.py`
+
+Contiene el procedimiento inverso para transformar la forma canonica de una conica a su ecuacion general.
 
 ### `src/salida.py`
 
@@ -175,5 +179,4 @@ El programa tambien imprime los pasos de validacion del RUT, la construccion de 
 ## Lider del grupo
 
 - Lider: Gabriel Gutiérrez
-
 
