@@ -33,6 +33,7 @@ calculo_eid/
 │  ├─ __init__.py
 │  ├─ rut.py
 │  ├─ conicas.py
+│  ├─ canonica_a_general.py
 │  └─ salida.py
 └─ README.md
 ```
@@ -72,6 +73,10 @@ Tambien aplica las reglas especiales del enunciado y clasifica la conica como:
 - Elipse.
 - Hiperbola.
 - Parabola.
+
+### `src/canonica_a_general.py`
+
+Contiene el procedimiento inverso para transformar la forma canonica de una conica a su ecuacion general.
 
 ### `src/salida.py`
 
