@@ -8,7 +8,8 @@ PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
 if PROYECTO_RAIZ not in sys.path:
     sys.path.insert(0, PROYECTO_RAIZ)
 
-from src.rut import validar_rut
+from src.rut import validar_rut, obtener_digitos
+from src.conicas import analizar_conica
 
 
 def formatear_resultado_rut(resultado):
@@ -43,6 +44,43 @@ def formatear_resultado_rut(resultado):
 
     return lineas
 
+def formatear_resultado_conica(resultado):
+    lineas = []
+    lineas.append("")
+    lineas.append("-" * 40)
+    lineas.append("Construcción de la Cónica")
+    lineas.append("-" * 40)
+
+    for paso in resultado["coeficientes"]["pasos"]:
+        lineas.append(paso)
+
+    lineas.append("")
+    lineas.append(f"Ecuación general: {resultado['ecuacion_general']}")
+    lineas.append(f"Clasificación: {resultado['tipo']}")
+
+    if "forma_canonica" in resultado and resultado["forma_canonica"]:
+        transform = resultado["forma_canonica"]
+        if transform.get("pasos"):
+            lineas.append("")
+            lineas.append("Transformación a forma canónica:")
+            for paso in transform["pasos"]:
+                lineas.append(paso)
+
+        forma = transform.get("forma_canonica")
+        if forma:
+            lineas.append("")
+            lineas.append(f"Forma canónica: {forma}")
+
+    if "canonica_a_general" in resultado and resultado["canonica_a_general"]:
+        inversa = resultado["canonica_a_general"]
+        if inversa.get("pasos"):
+            lineas.append("")
+            lineas.append("Transformación inversa: forma canónica a general:")
+            for paso in inversa["pasos"]:
+                lineas.append(paso)
+
+    return lineas
+
 def iniciar_interfaz():
     root = tk.Tk()
     root.title("EID N°1 - Introducción al Cálculo")
@@ -69,9 +107,16 @@ def iniciar_interfaz():
         rut_ingresado = entry_rut.get()
         resultado = validar_rut(rut_ingresado)
 
+        lineas_mostrar = formatear_resultado_rut(resultado)
+        
+        if resultado["valido"]:
+            digitos = obtener_digitos(resultado["cuerpo"])
+            resultado_conica = analizar_conica(digitos, resultado["dv_ingresado"])
+            lineas_mostrar.extend(formatear_resultado_conica(resultado_conica))
+
         txt_resultados.configure(state="normal")
         txt_resultados.delete("1.0", tk.END)
-        txt_resultados.insert(tk.END, "\n".join(formatear_resultado_rut(resultado)))
+        txt_resultados.insert(tk.END, "\n".join(lineas_mostrar))
         txt_resultados.configure(state="disabled")
 
     # Botón conectado al campo de entrada y al panel de resultados
