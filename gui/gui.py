@@ -83,8 +83,13 @@ def formatear_resultado_conica(resultado):
 
 def graficar_conica(canvas, coeficientes):
     canvas.delete("all")
-    w, h = 400, 400
+    canvas.update_idletasks()
+    w = canvas.winfo_width()
+    h = canvas.winfo_height()
     
+    if w <= 1 or h <= 1:
+        w, h = 600, 500 # Dimensiones por defecto
+        
     A = coeficientes["A"]
     B = coeficientes["B"]
     C = coeficientes["C"]
@@ -96,34 +101,40 @@ def graficar_conica(canvas, coeficientes):
     cy = -D / (2 * B) if B != 0 else 0
     
     rango = 15.0 # Unidades hacia cada lado desde el centro
-    escala = (w / 2) / rango
+    escala = min(w, h) / (rango * 2)
     
     def a_pixels(x, y):
         px = w / 2 + (x - cx) * escala
         py = h / 2 - (y - cy) * escala
         return px, py
 
+    # Dibujar cuadrícula tenue (grid)
+    for i in range(-int(rango), int(rango)+1):
+        px, _ = a_pixels(cx + i, 0)
+        canvas.create_line(px, 0, px, h, fill="#f0f0f0")
+        _, py = a_pixels(0, cy + i)
+        canvas.create_line(0, py, w, py, fill="#f0f0f0")
+
     # Dibujar ejes cartesianos (x=0, y=0)
     px1, py1 = a_pixels(cx - rango, 0)
     px2, py2 = a_pixels(cx + rango, 0)
-    canvas.create_line(px1, py1, px2, py2, fill="lightgray", dash=(4, 4))
+    canvas.create_line(0, py1, w, py2, fill="#a0a0a0", width=2) # Eje X
     
     px1, py1 = a_pixels(0, cy - rango)
     px2, py2 = a_pixels(0, cy + rango)
-    canvas.create_line(px1, py1, px2, py2, fill="lightgray", dash=(4, 4))
+    canvas.create_line(px1, 0, px2, h, fill="#a0a0a0", width=2) # Eje Y
     
     # Dibujar centro
     px_c, py_c = a_pixels(cx, cy)
-    canvas.create_oval(px_c-3, py_c-3, px_c+3, py_c+3, fill="blue", outline="blue")
+    canvas.create_oval(px_c-4, py_c-4, px_c+4, py_c+4, fill="#3498db", outline="#2980b9")
     
     def dibujar_punto(x, y):
         if cx - rango <= x <= cx + rango and cy - rango <= y <= cy + rango:
             px, py = a_pixels(x, y)
-            # Dibujar un rectangulo pequeno es mas rapido que oval
-            canvas.create_rectangle(px, py, px+1, py+1, fill="red", outline="red")
+            canvas.create_rectangle(px-1, py-1, px+1, py+1, fill="#e74c3c", outline="#e74c3c")
             
-    # Escaneo para graficar evaluando manualmente la ecuacion
-    paso = (rango * 2) / 1000.0
+    # Escaneo detallado
+    paso = (rango * 2) / 1200.0
     
     # Escaneo en X
     x = cx - rango
@@ -159,46 +170,60 @@ def graficar_conica(canvas, coeficientes):
 def iniciar_interfaz():
     root = tk.Tk()
     root.title("EID N°1 - Introducción al Cálculo")
-    root.geometry("1000x600")
+    root.geometry("1100x650")
+    root.configure(bg="#f4f6f9")
     
-    # Configuración de estilos básicos
-    root.configure(padx=20, pady=20)
+    # Configuración de estilos ttk modernos
+    style = ttk.Style()
+    if 'clam' in style.theme_names():
+        style.theme_use('clam')
+        
+    style.configure("TFrame", background="#f4f6f9")
+    style.configure("TLabel", background="#f4f6f9", font=("Segoe UI", 11))
+    style.configure("TButton", font=("Segoe UI", 11, "bold"), padding=6)
+    
+    # Header oscuro moderno
+    header_frame = tk.Frame(root, bg="#2c3e50", pady=15)
+    header_frame.pack(fill="x")
+    
+    lbl_titulo = tk.Label(header_frame, text="Calculadora Analítica de Cónicas", font=("Segoe UI", 18, "bold"), bg="#2c3e50", fg="white")
+    lbl_titulo.pack()
 
-    # Título principal
-    lbl_titulo = tk.Label(root, text="Calculadora de Cónicas por RUT", font=("Helvetica", 16, "bold"))
-    lbl_titulo.pack(pady=(0, 10))
+    # Contenedor principal con padding
+    main_frame = ttk.Frame(root, padding="20 20 20 20")
+    main_frame.pack(fill="both", expand=True)
 
-    # Marco para la entrada de datos
-    frame_entrada = tk.Frame(root)
-    frame_entrada.pack(pady=5, fill="x")
+    # Barra superior para el input
+    input_frame = ttk.Frame(main_frame)
+    input_frame.pack(fill="x", pady=(0, 15))
 
-    lbl_rut = tk.Label(frame_entrada, text="Ingrese RUT (Ej: 21.929.009-8):", font=("Helvetica", 11))
+    lbl_rut = ttk.Label(input_frame, text="RUT Chileno (Ej: 21.929.009-8):", font=("Segoe UI", 12))
     lbl_rut.pack(side="left", padx=(0, 10))
 
-    entry_rut = tk.Entry(frame_entrada, width=20, font=("Helvetica", 11))
-    entry_rut.pack(side="left", expand=True, fill="x")
+    entry_rut = ttk.Entry(input_frame, width=20, font=("Segoe UI", 12))
+    entry_rut.pack(side="left", padx=(0, 15))
 
-    # Botón conectado al campo de entrada y al panel de resultados
-    btn_calcular = tk.Button(root, text="Validar y mostrar RUT", font=("Helvetica", 11, "bold"), bg="#4CAF50", fg="white", relief="flat", pady=5)
-    btn_calcular.pack(pady=10, fill="x")
+    btn_calcular = ttk.Button(input_frame, text="▶ Analizar y Graficar")
+    btn_calcular.pack(side="left")
 
-    # Contenedor principal para resultados y gráfico
-    frame_contenido = tk.Frame(root)
-    frame_contenido.pack(fill="both", expand=True, pady=10)
+    # Contenedor dividido: Gráfico (Grande) y Resultados (Chico)
+    paneles_frame = ttk.Frame(main_frame)
+    paneles_frame.pack(fill="both", expand=True)
 
-    # Lado izquierdo: resultados
-    frame_resultados = tk.LabelFrame(frame_contenido, text=" Resultados del Análisis ", font=("Helvetica", 11, "bold"), padx=10, pady=10)
-    frame_resultados.pack(side="left", fill="both", expand=True, padx=(0, 10))
+    # Lado Izquierdo: Gráfico (Se expande)
+    frame_grafico = tk.LabelFrame(paneles_frame, text=" Representación Gráfica ", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#2c3e50", padx=10, pady=10)
+    frame_grafico.pack(side="left", fill="both", expand=True, padx=(0, 15))
 
-    txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Courier", 10), width=40)
+    canvas_grafico = tk.Canvas(frame_grafico, bg="#ffffff", highlightthickness=1, highlightbackground="#dcdde1")
+    canvas_grafico.pack(fill="both", expand=True)
+
+    # Lado Derecho: Resultados (Ancho fijo)
+    frame_resultados = tk.LabelFrame(paneles_frame, text=" Memoria de Cálculo ", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#2c3e50", padx=10, pady=10)
+    frame_resultados.pack(side="right", fill="y")
+
+    # Usamos un ancho menor (width=45) para darle prioridad al gráfico
+    txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8f9fa", fg="black", relief="flat", padx=10, pady=10)
     txt_resultados.pack(fill="both", expand=True)
-
-    # Lado derecho: grafico
-    frame_grafico = tk.LabelFrame(frame_contenido, text=" Gráfica de la Cónica ", font=("Helvetica", 11, "bold"), padx=10, pady=10)
-    frame_grafico.pack(side="right", fill="both")
-
-    canvas_grafico = tk.Canvas(frame_grafico, width=400, height=400, bg="white")
-    canvas_grafico.pack(padx=10, pady=10)
 
     def mostrar_rut():
         rut_ingresado = entry_rut.get()
@@ -222,7 +247,8 @@ def iniciar_interfaz():
     btn_calcular.config(command=mostrar_rut)
     entry_rut.focus_set()
 
-    # Iniciar el bucle principal de la aplicación
+    # Redibujar la gráfica si la ventana cambia de tamaño
+    # Guardamos los últimos coeficientes para redibujar
     root.mainloop()
 
 if __name__ == "__main__":
