@@ -2,9 +2,7 @@
 
 Aplicacion en Python para la Evaluacion Integrada de Desempeno N°1 del curso MAT1186.
 
-El proyecto valida un RUT chileno, extrae sus digitos y construye una ecuacion general de segundo grado para clasificar una seccion conica. Tambien muestra el procedimiento de transformacion desde la forma general a la forma canonica y el proceso inverso desde la forma canonica a la forma general.
-
-> Nota: `gui.py` es solo una prueba inicial de interfaz grafica. Es un modelo muy basico de lo que se quiere desarrollar mas adelante y todavia no reemplaza al flujo principal por consola.
+El proyecto valida un RUT chileno, extrae sus digitos y construye una ecuacion general de segundo grado para clasificar una seccion conica. Tambien muestra el procedimiento de transformacion desde la forma general a la forma canonica, el proceso inverso desde la forma canonica a la forma general y una interfaz grafica para visualizar los resultados.
 
 ## Requisitos actuales
 
@@ -15,10 +13,10 @@ El proyecto valida un RUT chileno, extrae sus digitos y construye una ecuacion g
 
 ## Como ejecutar
 
-Desde la carpeta raiz del proyecto, ejecutar la version principal por consola:
+Desde la carpeta raiz del proyecto, ejecutar la version principal con interfaz grafica:
 
 ```powershell
-python main.py
+python3 main.py
 ```
 
 Luego ingresar un RUT chileno con cuerpo de 8 digitos. Formatos aceptados:
@@ -29,25 +27,26 @@ Luego ingresar un RUT chileno con cuerpo de 8 digitos. Formatos aceptados:
 219290098
 ```
 
-Tambien se puede abrir el prototipo grafico:
+La version por consola sigue disponible desde la funcion `main_consola`:
 
 ```powershell
-python gui.py
+python3 -c "from main import main_consola; main_consola()"
 ```
-
-Ese archivo solo muestra una interfaz basica de prueba con campo para RUT, boton y zona de resultados. El boton todavia no ejecuta el analisis real.
 
 ## Estructura del proyecto
 
 ```text
 EID_Introduccion-al-calculo/
 ├─ main.py
-├─ gui.py
+├─ gui/
+│  ├─ __init__.py
+│  └─ gui.py
 ├─ src/
 │  ├─ __init__.py
 │  ├─ rut.py
 │  ├─ conicas.py
 │  ├─ canonica_a_general.py
+│  ├─ general_a_canonica.py
 │  └─ salida.py
 ├─ .gitignore
 └─ README.md
@@ -57,7 +56,7 @@ EID_Introduccion-al-calculo/
 
 ### `main.py`
 
-Archivo principal del programa por consola. Controla el flujo completo:
+Archivo principal del programa. Por defecto abre la interfaz grafica con `main()`. Tambien conserva `main_consola()` para ejecutar el flujo completo por terminal:
 
 1. Muestra el formato de RUT permitido.
 2. Pide el RUT al usuario.
@@ -67,18 +66,18 @@ Archivo principal del programa por consola. Controla el flujo completo:
 6. Construye y clasifica la conica.
 7. Muestra la ecuacion general, la forma canonica y el procedimiento inverso.
 
-### `gui.py`
+### `gui/gui.py`
 
-Prototipo basico de interfaz grafica hecho con `tkinter`.
+Interfaz grafica hecha con `tkinter`.
 
-Por ahora sirve como maqueta o modelo inicial de la interfaz que se quiere construir. Incluye:
+Incluye:
 
 - Ventana principal.
 - Campo para ingresar RUT.
 - Boton de analisis.
 - Area de resultados.
-
-Importante: todavia no esta conectado con la logica de `src/rut.py`, `src/conicas.py` ni `src/salida.py`.
+- Grafico de la conica.
+- Conexion con la validacion de RUT y el analisis de conicas.
 
 ### `src/rut.py`
 
@@ -110,12 +109,15 @@ Ademas contiene funciones para:
 
 - Formatear numeros para la salida.
 - Construir la ecuacion general.
-- Transformar la ecuacion general a forma canonica completando cuadrados.
-- Manejar casos no estandar o degenerados cuando no se puede obtener una forma canonica comun.
+- Coordinar el analisis completo de la conica.
 
 ### `src/canonica_a_general.py`
 
 Contiene el procedimiento inverso para transformar la forma canonica de una conica a su ecuacion general.
+
+### `src/general_a_canonica.py`
+
+Contiene el procedimiento para transformar la ecuacion general de una conica a forma canonica completando cuadrados.
 
 ### `src/salida.py`
 
@@ -142,13 +144,10 @@ Contiene funciones para mostrar en consola:
 - Impresion ordenada de la ecuacion general.
 - Transformacion paso a paso desde forma general a forma canonica.
 - Procedimiento inverso desde forma canonica a forma general.
-- Prototipo visual inicial en `gui.py`.
+- Interfaz grafica conectada con validacion, analisis y grafica de la conica.
 
 ## Funcionalidades pendientes
 
-- Conectar `gui.py` con la logica real del programa.
-- Mostrar los resultados reales dentro de la interfaz grafica.
-- Grafica de la conica.
 - Modulo de funciones por tramos.
 - Analisis de limites laterales, continuidad y discontinuidades.
 - Mejorar la interfaz grafica o evaluar una version web.
@@ -179,4 +178,3 @@ El programa tambien imprime los pasos de validacion del RUT, la construccion de 
 ## Lider del grupo
 
 - Lider: Gabriel Gutiérrez
-
