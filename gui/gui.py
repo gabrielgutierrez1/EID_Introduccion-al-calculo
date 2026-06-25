@@ -111,27 +111,27 @@ def graficar_conica(canvas, coeficientes):
     # Dibujar cuadrícula tenue (grid)
     for i in range(-int(rango), int(rango)+1):
         px, _ = a_pixels(cx + i, 0)
-        canvas.create_line(px, 0, px, h, fill="#f0f0f0")
+        canvas.create_line(px, 0, px, h, fill="#e6f2ff")
         _, py = a_pixels(0, cy + i)
-        canvas.create_line(0, py, w, py, fill="#f0f0f0")
+        canvas.create_line(0, py, w, py, fill="#e6f2ff")
 
     # Dibujar ejes cartesianos (x=0, y=0)
     px1, py1 = a_pixels(cx - rango, 0)
     px2, py2 = a_pixels(cx + rango, 0)
-    canvas.create_line(0, py1, w, py2, fill="#a0a0a0", width=2) # Eje X
+    canvas.create_line(0, py1, w, py2, fill="#5b7cfa", width=2) # Eje X
     
     px1, py1 = a_pixels(0, cy - rango)
     px2, py2 = a_pixels(0, cy + rango)
-    canvas.create_line(px1, 0, px2, h, fill="#a0a0a0", width=2) # Eje Y
+    canvas.create_line(px1, 0, px2, h, fill="#5b7cfa", width=2) # Eje Y
     
     # Dibujar centro
     px_c, py_c = a_pixels(cx, cy)
-    canvas.create_oval(px_c-4, py_c-4, px_c+4, py_c+4, fill="#3498db", outline="#2980b9")
+    canvas.create_oval(px_c-4, py_c-4, px_c+4, py_c+4, fill="#38bdf8", outline="#2563eb")
     
     def dibujar_punto(x, y):
         if cx - rango <= x <= cx + rango and cy - rango <= y <= cy + rango:
             px, py = a_pixels(x, y)
-            canvas.create_rectangle(px-1, py-1, px+1, py+1, fill="#e74c3c", outline="#e74c3c")
+            canvas.create_rectangle(px-1, py-1, px+1, py+1, fill="#7c3aed", outline="#7c3aed")
             
     # Escaneo detallado
     paso = (rango * 2) / 1200.0
@@ -168,26 +168,54 @@ def graficar_conica(canvas, coeficientes):
 
 
 def iniciar_interfaz():
+    color_fondo = "#eaf6ff"
+    color_panel = "#f5f9ff"
+    color_grafico = "#ffffff"
+    color_texto = "#172554"
+    color_header = "#1d4ed8"
+    color_header_secundario = "#6d28d9"
+    color_borde = "#bfdbfe"
+    color_boton = "#7c3aed"
+    color_boton_activo = "#2563eb"
+
     root = tk.Tk()
     root.title("EID N°1 - Introducción al Cálculo")
     root.geometry("1100x650")
-    root.configure(bg="#f4f6f9")
+    root.configure(bg=color_fondo)
     
     # Configuración de estilos ttk modernos
     style = ttk.Style()
     if 'clam' in style.theme_names():
         style.theme_use('clam')
         
-    style.configure("TFrame", background="#f4f6f9")
-    style.configure("TLabel", background="#f4f6f9", font=("Segoe UI", 11))
-    style.configure("TButton", font=("Segoe UI", 11, "bold"), padding=6)
+    style.configure("TFrame", background=color_fondo)
+    style.configure("TLabel", background=color_fondo, foreground=color_texto, font=("Segoe UI", 11))
+    style.configure("TEntry", fieldbackground="#ffffff", foreground=color_texto, bordercolor=color_borde)
+    style.configure(
+        "Accent.TButton",
+        background=color_boton,
+        foreground="#ffffff",
+        bordercolor=color_boton,
+        focusthickness=2,
+        focuscolor=color_borde,
+        font=("Segoe UI", 11, "bold"),
+        padding=7,
+    )
+    style.map(
+        "Accent.TButton",
+        background=[("active", color_boton_activo), ("pressed", color_header_secundario)],
+        bordercolor=[("active", color_boton_activo), ("pressed", color_header_secundario)],
+        foreground=[("disabled", "#dbeafe"), ("active", "#ffffff")],
+    )
     
-    # Header oscuro moderno
-    header_frame = tk.Frame(root, bg="#2c3e50", pady=15)
+    # Header moderno
+    header_frame = tk.Frame(root, bg=color_header, pady=15)
     header_frame.pack(fill="x")
     
-    lbl_titulo = tk.Label(header_frame, text="Calculadora Analítica de Cónicas", font=("Segoe UI", 18, "bold"), bg="#2c3e50", fg="white")
+    lbl_titulo = tk.Label(header_frame, text="Calculadora Analítica de Cónicas", font=("Segoe UI", 18, "bold"), bg=color_header, fg="white")
     lbl_titulo.pack()
+    barra_acento = tk.Frame(root, bg=color_header_secundario, height=4)
+    barra_acento.pack(fill="x")
 
     # Contenedor principal con padding
     main_frame = ttk.Frame(root, padding="20 20 20 20")
@@ -197,13 +225,13 @@ def iniciar_interfaz():
     input_frame = ttk.Frame(main_frame)
     input_frame.pack(fill="x", pady=(0, 15))
 
-    lbl_rut = ttk.Label(input_frame, text="RUT Chileno (Ej: 21.929.009-8):", font=("Segoe UI", 12))
+    lbl_rut = ttk.Label(input_frame, text="RUT Chileno (Ej: 12.345.678-8):", font=("Segoe UI", 12))
     lbl_rut.pack(side="left", padx=(0, 10))
 
     entry_rut = ttk.Entry(input_frame, width=20, font=("Segoe UI", 12))
     entry_rut.pack(side="left", padx=(0, 15))
 
-    btn_calcular = ttk.Button(input_frame, text="▶ Analizar y Graficar")
+    btn_calcular = ttk.Button(input_frame, text="▶ Analizar y Graficar", style="Accent.TButton")
     btn_calcular.pack(side="left")
 
     # Contenedor dividido: Gráfico (Grande) y Resultados (Chico)
@@ -211,18 +239,18 @@ def iniciar_interfaz():
     paneles_frame.pack(fill="both", expand=True)
 
     # Lado Izquierdo: Gráfico (Se expande)
-    frame_grafico = tk.LabelFrame(paneles_frame, text=" Representación Gráfica ", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#2c3e50", padx=10, pady=10)
+    frame_grafico = tk.LabelFrame(paneles_frame, text=" Representación Gráfica ", font=("Segoe UI", 12, "bold"), bg=color_grafico, fg=color_header, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
     frame_grafico.pack(side="left", fill="both", expand=True, padx=(0, 15))
 
-    canvas_grafico = tk.Canvas(frame_grafico, bg="#ffffff", highlightthickness=1, highlightbackground="#dcdde1")
+    canvas_grafico = tk.Canvas(frame_grafico, bg=color_grafico, highlightthickness=1, highlightbackground=color_borde)
     canvas_grafico.pack(fill="both", expand=True)
 
     # Lado Derecho: Resultados (Ancho fijo)
-    frame_resultados = tk.LabelFrame(paneles_frame, text=" Memoria de Cálculo ", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#2c3e50", padx=10, pady=10)
+    frame_resultados = tk.LabelFrame(paneles_frame, text=" Memoria de Cálculo ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
     frame_resultados.pack(side="right", fill="y")
 
     # Usamos un ancho menor (width=45) para darle prioridad al gráfico
-    txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8f9fa", fg="black", relief="flat", padx=10, pady=10)
+    txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=10, pady=10, highlightthickness=1, highlightbackground=color_borde)
     txt_resultados.pack(fill="both", expand=True)
 
     def mostrar_rut():
