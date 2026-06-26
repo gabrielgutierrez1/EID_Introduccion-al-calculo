@@ -3,9 +3,17 @@ def obtener_vista_conica(coeficientes):
     B = coeficientes["B"]
     C = coeficientes["C"]
     D = coeficientes["D"]
+    E = coeficientes["E"]
 
-    cx = -C / (2 * A) if A != 0 else 0
-    cy = -D / (2 * B) if B != 0 else 0
+    if A != 0 and B == 0 and D != 0:
+        cx = -C / (2 * A)
+        cy = -(A * cx * cx + C * cx + E) / D
+    elif A == 0 and B != 0 and C != 0:
+        cy = -D / (2 * B)
+        cx = -(B * cy * cy + D * cy + E) / C
+    else:
+        cx = -C / (2 * A) if A != 0 else 0
+        cy = -D / (2 * B) if B != 0 else 0
 
     return {"cx": cx, "cy": cy, "rango": 15.0}
 
@@ -65,6 +73,45 @@ def _formatear_tick(valor):
     return f"{valor:.2f}".rstrip("0").rstrip(".")
 
 
+def _dibujar_numeros_ejes(canvas, w, h, x_min, x_max, y_min, y_max, paso_tick, a_pixels):
+    i = int(x_min // paso_tick) - 1
+    while i * paso_tick <= x_max + paso_tick:
+        val_x = i * paso_tick
+        i += 1
+        if abs(val_x) < 1e-9:
+            continue
+
+        px, py = a_pixels(val_x, 0)
+        if 0 <= px <= w and 0 <= py <= h:
+            canvas.create_line(px, py - 3, px, py + 3, fill="#5b7cfa", width=1.5)
+            canvas.create_text(
+                px,
+                py + 12,
+                text=_formatear_tick(val_x),
+                fill="#172554",
+                font=("Segoe UI", 8),
+            )
+
+    i = int(y_min // paso_tick) - 1
+    while i * paso_tick <= y_max + paso_tick:
+        val_y = i * paso_tick
+        i += 1
+        if abs(val_y) < 1e-9:
+            continue
+
+        px, py = a_pixels(0, val_y)
+        if 0 <= px <= w and 0 <= py <= h:
+            canvas.create_line(px - 3, py, px + 3, py, fill="#5b7cfa", width=1.5)
+            canvas.create_text(
+                px - 12,
+                py,
+                text=_formatear_tick(val_y),
+                fill="#172554",
+                font=("Segoe UI", 8),
+                anchor="e",
+            )
+
+
 def graficar_conica(canvas, coeficientes, vista=None):
     canvas.delete("all")
     canvas.update_idletasks()
@@ -90,7 +137,8 @@ def graficar_conica(canvas, coeficientes, vista=None):
         py = h / 2 - (y - vista["cy"]) * escala
         return px, py
 
-    _, x_min, x_max, y_min, y_max, _ = _dibujar_cuadricula_y_ejes(canvas, w, h, vista, a_pixels)
+    _, x_min, x_max, y_min, y_max, paso_tick = _dibujar_cuadricula_y_ejes(canvas, w, h, vista, a_pixels)
+    _dibujar_numeros_ejes(canvas, w, h, x_min, x_max, y_min, y_max, paso_tick, a_pixels)
 
     cx = -C / (2 * A) if A != 0 else 0
     cy = -D / (2 * B) if B != 0 else 0
@@ -183,32 +231,7 @@ def graficar_funcion_por_tramos(canvas, analisis, vista=None):
         return px, py
 
     _, x_min, x_max, y_min, y_max, paso_tick = _dibujar_cuadricula_y_ejes(canvas, w, h, vista, a_pixels)
-
-    # Ticks y etiquetas del Eje X
-    i = int(x_min // paso_tick) - 1
-    while i * paso_tick <= x_max + paso_tick:
-        val_x = i * paso_tick
-        i += 1
-        if abs(val_x) < 1e-9:
-            continue
-        px, py = a_pixels(val_x, 0)
-        if 0 <= px <= w and 0 <= py <= h:
-            canvas.create_line(px, py - 3, px, py + 3, fill="#5b7cfa", width=1.5)
-            val_str = _formatear_tick(val_x)
-            canvas.create_text(px, py + 12, text=val_str, fill="#172554", font=("Segoe UI", 8))
-
-    # Ticks y etiquetas del Eje Y
-    i = int(y_min // paso_tick) - 1
-    while i * paso_tick <= y_max + paso_tick:
-        val_y = i * paso_tick
-        i += 1
-        if abs(val_y) < 1e-9:
-            continue
-        px, py = a_pixels(0, val_y)
-        if 0 <= px <= w and 0 <= py <= h:
-            canvas.create_line(px - 3, py, px + 3, py, fill="#5b7cfa", width=1.5)
-            val_str = _formatear_tick(val_y)
-            canvas.create_text(px - 12, py, text=val_str, fill="#172554", font=("Segoe UI", 8), anchor="e")
+    _dibujar_numeros_ejes(canvas, w, h, x_min, x_max, y_min, y_max, paso_tick, a_pixels)
 
     # Línea de discontinuidad en x = a (roja segmentada)
     px_a, _ = a_pixels(a, 0)
