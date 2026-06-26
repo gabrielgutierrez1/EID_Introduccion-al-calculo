@@ -222,6 +222,17 @@ def graficar_conica(canvas, coeficientes, vista=None):
             marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max))
         except Exception as e:
             print(f"No se pudo marcar elementos de la circunferencia: {e}")
+    elif A * B < 0:
+        try:
+            import sys
+            import os
+            PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
+            if PROYECTO_RAIZ not in sys.path:
+                sys.path.insert(0, PROYECTO_RAIZ)
+            from elementos_conicas.elem_hiperbola import marcar_elementos_hiperbola
+            marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max))
+        except Exception as e:
+            print(f"No se pudo marcar elementos de la hiperbola: {e}")
 
     if puntos_graficados == 0:
         canvas.create_text(
