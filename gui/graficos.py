@@ -200,6 +200,18 @@ def graficar_conica(canvas, coeficientes, vista=None):
                 dibujar_punto((-C - raiz) / (2 * A), y)
         y += paso_y
 
+    if (A == 0 and B != 0) or (A != 0 and B == 0):
+        try:
+            import sys
+            import os
+            PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
+            if PROYECTO_RAIZ not in sys.path:
+                sys.path.insert(0, PROYECTO_RAIZ)
+            from elementos_conicas.elem_parabola import marcar_elementos_parabola
+            marcar_elementos_parabola(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max))
+        except Exception as e:
+            print(f"No se pudo marcar elementos de la parabola: {e}")
+
     if puntos_graficados == 0:
         canvas.create_text(
             w / 2,
