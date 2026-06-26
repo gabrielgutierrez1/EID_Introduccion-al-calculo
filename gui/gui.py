@@ -10,6 +10,7 @@ if PROYECTO_RAIZ not in sys.path:
 
 from src.rut import validar_rut, obtener_digitos
 from src.conicas import analizar_conica
+from gui.graficos import graficar_conica
 
 
 def formatear_resultado_rut(resultado):
@@ -80,92 +81,6 @@ def formatear_resultado_conica(resultado):
                 lineas.append(paso)
 
     return lineas
-
-def graficar_conica(canvas, coeficientes):
-    canvas.delete("all")
-    canvas.update_idletasks()
-    w = canvas.winfo_width()
-    h = canvas.winfo_height()
-    
-    if w <= 1 or h <= 1:
-        w, h = 600, 500 # Dimensiones por defecto
-        
-    A = coeficientes["A"]
-    B = coeficientes["B"]
-    C = coeficientes["C"]
-    D = coeficientes["D"]
-    E = coeficientes["E"]
-    
-    # Calcular centro aproximado para enfocar la vista
-    cx = -C / (2 * A) if A != 0 else 0
-    cy = -D / (2 * B) if B != 0 else 0
-    
-    rango = 15.0 # Unidades hacia cada lado desde el centro
-    escala = min(w, h) / (rango * 2)
-    
-    def a_pixels(x, y):
-        px = w / 2 + (x - cx) * escala
-        py = h / 2 - (y - cy) * escala
-        return px, py
-
-    # Dibujar cuadrícula tenue (grid)
-    for i in range(-int(rango), int(rango)+1):
-        px, _ = a_pixels(cx + i, 0)
-        canvas.create_line(px, 0, px, h, fill="#e6f2ff")
-        _, py = a_pixels(0, cy + i)
-        canvas.create_line(0, py, w, py, fill="#e6f2ff")
-
-    # Dibujar ejes cartesianos (x=0, y=0)
-    px1, py1 = a_pixels(cx - rango, 0)
-    px2, py2 = a_pixels(cx + rango, 0)
-    canvas.create_line(0, py1, w, py2, fill="#5b7cfa", width=2) # Eje X
-    
-    px1, py1 = a_pixels(0, cy - rango)
-    px2, py2 = a_pixels(0, cy + rango)
-    canvas.create_line(px1, 0, px2, h, fill="#5b7cfa", width=2) # Eje Y
-    
-    # Dibujar centro
-    px_c, py_c = a_pixels(cx, cy)
-    canvas.create_oval(px_c-4, py_c-4, px_c+4, py_c+4, fill="#38bdf8", outline="#2563eb")
-    
-    def dibujar_punto(x, y):
-        if cx - rango <= x <= cx + rango and cy - rango <= y <= cy + rango:
-            px, py = a_pixels(x, y)
-            canvas.create_rectangle(px-1, py-1, px+1, py+1, fill="#7c3aed", outline="#7c3aed")
-            
-    # Escaneo detallado
-    paso = (rango * 2) / 1200.0
-    
-    # Escaneo en X
-    x = cx - rango
-    while x <= cx + rango:
-        c_eq = A*x*x + C*x + E
-        if B == 0:
-            if D != 0:
-                dibujar_punto(x, -c_eq / D)
-        else:
-            delta = D*D - 4*B*c_eq
-            if delta >= 0:
-                raiz = delta ** 0.5
-                dibujar_punto(x, (-D + raiz) / (2*B))
-                dibujar_punto(x, (-D - raiz) / (2*B))
-        x += paso
-
-    # Escaneo en Y
-    y = cy - rango
-    while y <= cy + rango:
-        c_eq = B*y*y + D*y + E
-        if A == 0:
-            if C != 0:
-                dibujar_punto(-c_eq / C, y)
-        else:
-            delta = C*C - 4*A*c_eq
-            if delta >= 0:
-                raiz = delta ** 0.5
-                dibujar_punto((-C + raiz) / (2*A), y)
-                dibujar_punto((-C - raiz) / (2*A), y)
-        y += paso
-
 
 def iniciar_interfaz():
     color_fondo = "#eaf6ff"
@@ -253,6 +168,20 @@ def iniciar_interfaz():
     txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=10, pady=10, highlightthickness=1, highlightbackground=color_borde)
     txt_resultados.pack(fill="both", expand=True)
 
+    ultimo_grafico = {"coeficientes": None, "redibujo": None}
+
+    def redibujar_grafico():
+        ultimo_grafico["redibujo"] = None
+        if ultimo_grafico["coeficientes"] is not None:
+            graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"])
+
+    def preparar_redibujo(_evento):
+        if ultimo_grafico["coeficientes"] is None:
+            return
+        if ultimo_grafico["redibujo"] is not None:
+            canvas_grafico.after_cancel(ultimo_grafico["redibujo"])
+        ultimo_grafico["redibujo"] = canvas_grafico.after(120, redibujar_grafico)
+
     def mostrar_rut():
         rut_ingresado = entry_rut.get()
         resultado = validar_rut(rut_ingresado)
@@ -263,8 +192,10 @@ def iniciar_interfaz():
             digitos = obtener_digitos(resultado["cuerpo"])
             resultado_conica = analizar_conica(digitos, resultado["dv_ingresado"])
             lineas_mostrar.extend(formatear_resultado_conica(resultado_conica))
-            graficar_conica(canvas_grafico, resultado_conica["coeficientes"])
+            ultimo_grafico["coeficientes"] = resultado_conica["coeficientes"]
+            graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"])
         else:
+            ultimo_grafico["coeficientes"] = None
             canvas_grafico.delete("all")
 
         txt_resultados.configure(state="normal")
@@ -273,10 +204,9 @@ def iniciar_interfaz():
         txt_resultados.configure(state="disabled")
 
     btn_calcular.config(command=mostrar_rut)
+    canvas_grafico.bind("<Configure>", preparar_redibujo)
     entry_rut.focus_set()
 
-    # Redibujar la gráfica si la ventana cambia de tamaño
-    # Guardamos los últimos coeficientes para redibujar
     root.mainloop()
 
 if __name__ == "__main__":
