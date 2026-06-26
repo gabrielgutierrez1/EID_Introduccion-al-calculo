@@ -1,5 +1,3 @@
-import math
-
 def marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, limites_visibles):
     A = coeficientes["A"]
     B = coeficientes["B"]
@@ -17,7 +15,7 @@ def marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, limites_visi
     if discriminante <= 0:
         return # No es un circulo real o es solo un punto
         
-    r = math.sqrt(discriminante) / (2 * abs(A))
+    r = (discriminante ** 0.5) / (2 * abs(A))
     
     def dibujar_punto_destacado(x, y, color, radio=5):
         px, py = a_pixels(x, y)
