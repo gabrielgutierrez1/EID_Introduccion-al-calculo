@@ -11,7 +11,12 @@ if PROYECTO_RAIZ not in sys.path:
 from src.rut import validar_rut, obtener_digitos
 from src.conicas import analizar_conica
 from src.funciones_por_tramos import analizar_funcion_por_tramos, formatear_numero
-from .graficos import graficar_conica, graficar_funcion_por_tramos
+from .graficos import (
+    graficar_conica,
+    graficar_funcion_por_tramos,
+    obtener_vista_conica,
+    obtener_vista_tramos,
+)
 
 
 def formatear_resultado_rut(resultado):
@@ -183,6 +188,19 @@ def iniciar_interfaz():
         bordercolor=[("active", color_boton_activo), ("pressed", color_header_secundario)],
         foreground=[("disabled", "#dbeafe"), ("active", "#ffffff")],
     )
+    style.configure(
+        "Tool.TButton",
+        background="#dbeafe",
+        foreground=color_texto,
+        bordercolor=color_borde,
+        font=("Segoe UI", 10, "bold"),
+        padding=(8, 4),
+    )
+    style.map(
+        "Tool.TButton",
+        background=[("active", "#bfdbfe"), ("pressed", "#93c5fd")],
+        foreground=[("active", color_texto)],
+    )
 
     # Estilos modernos para Notebook y Pestañas
     style.configure("TNotebook", background=color_fondo, borderwidth=0)
@@ -234,6 +252,19 @@ def iniciar_interfaz():
     frame_grafico = tk.LabelFrame(paneles_frame, text=" Representación Gráfica (Cónicas) ", font=("Segoe UI", 12, "bold"), bg=color_grafico, fg=color_header, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
     frame_grafico.pack(side="left", fill="both", expand=True, padx=(0, 15))
 
+    barra_grafico = tk.Frame(frame_grafico, bg=color_grafico)
+    barra_grafico.pack(fill="x", pady=(0, 8))
+    lbl_ayuda_grafico = tk.Label(
+        barra_grafico,
+        text="Rueda: zoom | Arrastrar: mover | Doble clic: reiniciar",
+        font=("Segoe UI", 9),
+        bg=color_grafico,
+        fg="#475569",
+    )
+    lbl_ayuda_grafico.pack(side="left")
+    btn_reset_conica = ttk.Button(barra_grafico, text="Reiniciar vista", style="Tool.TButton")
+    btn_reset_conica.pack(side="right")
+
     canvas_grafico = tk.Canvas(frame_grafico, bg=color_grafico, highlightthickness=1, highlightbackground=color_borde)
     canvas_grafico.pack(fill="both", expand=True)
 
@@ -252,6 +283,19 @@ def iniciar_interfaz():
     frame_grafico_tramos = tk.LabelFrame(paneles_tramos_frame, text=" Representación Gráfica (Por Tramo) ", font=("Segoe UI", 12, "bold"), bg=color_grafico, fg=color_header, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
     frame_grafico_tramos.pack(side="left", fill="both", expand=True, padx=(0, 15))
 
+    barra_grafico_tramos = tk.Frame(frame_grafico_tramos, bg=color_grafico)
+    barra_grafico_tramos.pack(fill="x", pady=(0, 8))
+    lbl_ayuda_tramos = tk.Label(
+        barra_grafico_tramos,
+        text="Rueda: zoom | Arrastrar: mover | Doble clic: reiniciar",
+        font=("Segoe UI", 9),
+        bg=color_grafico,
+        fg="#475569",
+    )
+    lbl_ayuda_tramos.pack(side="left")
+    btn_reset_tramos = ttk.Button(barra_grafico_tramos, text="Reiniciar vista", style="Tool.TButton")
+    btn_reset_tramos.pack(side="right")
+
     canvas_tramos = tk.Canvas(frame_grafico_tramos, bg=color_grafico, highlightthickness=1, highlightbackground=color_borde)
     canvas_tramos.pack(fill="both", expand=True)
 
@@ -263,13 +307,13 @@ def iniciar_interfaz():
     txt_resultados_tramos.pack(fill="both", expand=True)
 
     # Estados de gráficos para redibujo
-    ultimo_grafico = {"coeficientes": None, "redibujo": None}
-    ultimo_grafico_tramos = {"analisis": None, "redibujo": None}
+    ultimo_grafico = {"coeficientes": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False}
+    ultimo_grafico_tramos = {"analisis": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False}
 
     def redibujar_grafico():
         ultimo_grafico["redibujo"] = None
         if ultimo_grafico["coeficientes"] is not None:
-            graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"])
+            graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"], ultimo_grafico["vista"])
 
     def preparar_redibujo(_evento):
         if ultimo_grafico["coeficientes"] is None:
@@ -281,7 +325,7 @@ def iniciar_interfaz():
     def redibujar_grafico_tramos():
         ultimo_grafico_tramos["redibujo"] = None
         if ultimo_grafico_tramos["analisis"] is not None:
-            graficar_funcion_por_tramos(canvas_tramos, ultimo_grafico_tramos["analisis"])
+            graficar_funcion_por_tramos(canvas_tramos, ultimo_grafico_tramos["analisis"], ultimo_grafico_tramos["vista"])
 
     def preparar_redibujo_tramos(_evento):
         if ultimo_grafico_tramos["analisis"] is None:
@@ -289,6 +333,75 @@ def iniciar_interfaz():
         if ultimo_grafico_tramos["redibujo"] is not None:
             canvas_tramos.after_cancel(ultimo_grafico_tramos["redibujo"])
         ultimo_grafico_tramos["redibujo"] = canvas_tramos.after(120, redibujar_grafico_tramos)
+
+    def escala_canvas(canvas, vista):
+        w = canvas.winfo_width()
+        h = canvas.winfo_height()
+        if w <= 1 or h <= 1:
+            w, h = 600, 500
+        return min(w, h) / (vista["rango"] * 2)
+
+    def punto_mundo(canvas, vista, px, py):
+        escala = escala_canvas(canvas, vista)
+        w = canvas.winfo_width() if canvas.winfo_width() > 1 else 600
+        h = canvas.winfo_height() if canvas.winfo_height() > 1 else 500
+        x = vista["cx"] + (px - w / 2) / escala
+        y = vista["cy"] - (py - h / 2) / escala
+        return x, y
+
+    def aplicar_zoom(canvas, estado, redibujar, evento):
+        vista = estado["vista"]
+        if vista is None:
+            return
+
+        delta = getattr(evento, "delta", 0)
+        factor = 0.82 if delta > 0 or getattr(evento, "num", None) == 4 else 1.22
+        rango_nuevo = max(0.25, min(250.0, vista["rango"] * factor))
+
+        x_antes, y_antes = punto_mundo(canvas, vista, evento.x, evento.y)
+        vista["rango"] = rango_nuevo
+        x_despues, y_despues = punto_mundo(canvas, vista, evento.x, evento.y)
+        vista["cx"] += x_antes - x_despues
+        vista["cy"] += y_antes - y_despues
+        redibujar()
+
+    def iniciar_arrastre(estado, evento):
+        estado["arrastre"] = {"x": evento.x, "y": evento.y}
+        estado["movio"] = False
+
+    def mover_vista(canvas, estado, evento):
+        vista = estado["vista"]
+        arrastre = estado["arrastre"]
+        if vista is None or arrastre is None:
+            return
+
+        escala = escala_canvas(canvas, vista)
+        dx = evento.x - arrastre["x"]
+        dy = evento.y - arrastre["y"]
+        vista["cx"] -= dx / escala
+        vista["cy"] += dy / escala
+        estado["arrastre"] = {"x": evento.x, "y": evento.y}
+        estado["movio"] = True
+        canvas.move("all", dx, dy)
+
+    def terminar_arrastre(estado, redibujar, _evento):
+        debe_redibujar = estado["movio"]
+        estado["arrastre"] = None
+        estado["movio"] = False
+        if debe_redibujar:
+            redibujar()
+
+    def reiniciar_vista_conica():
+        if ultimo_grafico["coeficientes"] is None:
+            return
+        ultimo_grafico["vista"] = obtener_vista_conica(ultimo_grafico["coeficientes"])
+        redibujar_grafico()
+
+    def reiniciar_vista_tramos():
+        if ultimo_grafico_tramos["analisis"] is None:
+            return
+        ultimo_grafico_tramos["vista"] = obtener_vista_tramos(ultimo_grafico_tramos["analisis"])
+        redibujar_grafico_tramos()
 
     def mostrar_rut():
         rut_ingresado = entry_rut.get()
@@ -304,18 +417,26 @@ def iniciar_interfaz():
             resultado_conica = analizar_conica(digitos, resultado["dv_ingresado"])
             lineas_conicas.extend(formatear_resultado_conica(resultado_conica))
             ultimo_grafico["coeficientes"] = resultado_conica["coeficientes"]
-            graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"])
+            ultimo_grafico["vista"] = obtener_vista_conica(ultimo_grafico["coeficientes"])
+            graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"], ultimo_grafico["vista"])
             
             # Funciones por tramos
             resultado_tramos = analizar_funcion_por_tramos(digitos)
             lineas_tramos.extend(formatear_resultado_tramos(resultado_tramos))
             ultimo_grafico_tramos["analisis"] = resultado_tramos
-            graficar_funcion_por_tramos(canvas_tramos, ultimo_grafico_tramos["analisis"])
+            ultimo_grafico_tramos["vista"] = obtener_vista_tramos(ultimo_grafico_tramos["analisis"])
+            graficar_funcion_por_tramos(canvas_tramos, ultimo_grafico_tramos["analisis"], ultimo_grafico_tramos["vista"])
         else:
             ultimo_grafico["coeficientes"] = None
+            ultimo_grafico["vista"] = None
+            ultimo_grafico["arrastre"] = None
+            ultimo_grafico["movio"] = False
             canvas_grafico.delete("all")
             
             ultimo_grafico_tramos["analisis"] = None
+            ultimo_grafico_tramos["vista"] = None
+            ultimo_grafico_tramos["arrastre"] = None
+            ultimo_grafico_tramos["movio"] = False
             canvas_tramos.delete("all")
 
         # Actualizar panel de Cónicas
@@ -331,8 +452,24 @@ def iniciar_interfaz():
         txt_resultados_tramos.configure(state="disabled")
 
     btn_calcular.config(command=mostrar_rut)
+    btn_reset_conica.config(command=reiniciar_vista_conica)
+    btn_reset_tramos.config(command=reiniciar_vista_tramos)
     canvas_grafico.bind("<Configure>", preparar_redibujo)
     canvas_tramos.bind("<Configure>", preparar_redibujo_tramos)
+    canvas_grafico.bind("<MouseWheel>", lambda e: aplicar_zoom(canvas_grafico, ultimo_grafico, redibujar_grafico, e))
+    canvas_grafico.bind("<Button-4>", lambda e: aplicar_zoom(canvas_grafico, ultimo_grafico, redibujar_grafico, e))
+    canvas_grafico.bind("<Button-5>", lambda e: aplicar_zoom(canvas_grafico, ultimo_grafico, redibujar_grafico, e))
+    canvas_grafico.bind("<ButtonPress-1>", lambda e: iniciar_arrastre(ultimo_grafico, e))
+    canvas_grafico.bind("<B1-Motion>", lambda e: mover_vista(canvas_grafico, ultimo_grafico, e))
+    canvas_grafico.bind("<ButtonRelease-1>", lambda e: terminar_arrastre(ultimo_grafico, redibujar_grafico, e))
+    canvas_grafico.bind("<Double-Button-1>", lambda _e: reiniciar_vista_conica())
+    canvas_tramos.bind("<MouseWheel>", lambda e: aplicar_zoom(canvas_tramos, ultimo_grafico_tramos, redibujar_grafico_tramos, e))
+    canvas_tramos.bind("<Button-4>", lambda e: aplicar_zoom(canvas_tramos, ultimo_grafico_tramos, redibujar_grafico_tramos, e))
+    canvas_tramos.bind("<Button-5>", lambda e: aplicar_zoom(canvas_tramos, ultimo_grafico_tramos, redibujar_grafico_tramos, e))
+    canvas_tramos.bind("<ButtonPress-1>", lambda e: iniciar_arrastre(ultimo_grafico_tramos, e))
+    canvas_tramos.bind("<B1-Motion>", lambda e: mover_vista(canvas_tramos, ultimo_grafico_tramos, e))
+    canvas_tramos.bind("<ButtonRelease-1>", lambda e: terminar_arrastre(ultimo_grafico_tramos, redibujar_grafico_tramos, e))
+    canvas_tramos.bind("<Double-Button-1>", lambda _e: reiniciar_vista_tramos())
     entry_rut.focus_set()
 
     root.mainloop()

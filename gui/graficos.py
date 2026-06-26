@@ -1,4 +1,71 @@
-def graficar_conica(canvas, coeficientes):
+def obtener_vista_conica(coeficientes):
+    A = coeficientes["A"]
+    B = coeficientes["B"]
+    C = coeficientes["C"]
+    D = coeficientes["D"]
+
+    cx = -C / (2 * A) if A != 0 else 0
+    cy = -D / (2 * B) if B != 0 else 0
+
+    return {"cx": cx, "cy": cy, "rango": 15.0}
+
+
+def obtener_vista_tramos(analisis):
+    return {"cx": analisis["a"], "cy": 0.0, "rango": 10.0}
+
+
+def _limites_visibles(w, h, vista):
+    escala = min(w, h) / (vista["rango"] * 2)
+    x_min = vista["cx"] - (w / 2) / escala
+    x_max = vista["cx"] + (w / 2) / escala
+    y_min = vista["cy"] - (h / 2) / escala
+    y_max = vista["cy"] + (h / 2) / escala
+    return escala, x_min, x_max, y_min, y_max
+
+
+def _paso_cuadricula(rango):
+    pasos = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]
+    objetivo = rango / 6
+    for paso in pasos:
+        if paso >= objetivo:
+            return paso
+    return pasos[-1]
+
+
+def _dibujar_cuadricula_y_ejes(canvas, w, h, vista, a_pixels):
+    escala, x_min, x_max, y_min, y_max = _limites_visibles(w, h, vista)
+    paso = _paso_cuadricula(vista["rango"])
+
+    i = int(x_min // paso) - 1
+    while i * paso <= x_max + paso:
+        x = i * paso
+        px, _ = a_pixels(x, 0)
+        canvas.create_line(px, 0, px, h, fill="#e6f2ff")
+        i += 1
+
+    i = int(y_min // paso) - 1
+    while i * paso <= y_max + paso:
+        y = i * paso
+        _, py = a_pixels(0, y)
+        canvas.create_line(0, py, w, py, fill="#e6f2ff")
+        i += 1
+
+    _, py_eje_x = a_pixels(0, 0)
+    canvas.create_line(0, py_eje_x, w, py_eje_x, fill="#5b7cfa", width=2)
+
+    px_eje_y, _ = a_pixels(0, 0)
+    canvas.create_line(px_eje_y, 0, px_eje_y, h, fill="#5b7cfa", width=2)
+
+    return escala, x_min, x_max, y_min, y_max, paso
+
+
+def _formatear_tick(valor):
+    if abs(valor) < 1e-9:
+        valor = 0
+    return f"{valor:.2f}".rstrip("0").rstrip(".")
+
+
+def graficar_conica(canvas, coeficientes, vista=None):
     canvas.delete("all")
     canvas.update_idletasks()
     w = canvas.winfo_width()
@@ -13,28 +80,20 @@ def graficar_conica(canvas, coeficientes):
     D = coeficientes["D"]
     E = coeficientes["E"]
 
-    cx = -C / (2 * A) if A != 0 else 0
-    cy = -D / (2 * B) if B != 0 else 0
+    if vista is None:
+        vista = obtener_vista_conica(coeficientes)
 
-    rango = 15.0
-    escala = min(w, h) / (rango * 2)
+    escala = min(w, h) / (vista["rango"] * 2)
 
     def a_pixels(x, y):
-        px = w / 2 + (x - cx) * escala
-        py = h / 2 - (y - cy) * escala
+        px = w / 2 + (x - vista["cx"]) * escala
+        py = h / 2 - (y - vista["cy"]) * escala
         return px, py
 
-    for i in range(-int(rango), int(rango) + 1):
-        px, _ = a_pixels(cx + i, 0)
-        canvas.create_line(px, 0, px, h, fill="#e6f2ff")
-        _, py = a_pixels(0, cy + i)
-        canvas.create_line(0, py, w, py, fill="#e6f2ff")
+    _, x_min, x_max, y_min, y_max, _ = _dibujar_cuadricula_y_ejes(canvas, w, h, vista, a_pixels)
 
-    _, py_eje_x = a_pixels(0, 0)
-    canvas.create_line(0, py_eje_x, w, py_eje_x, fill="#5b7cfa", width=2)
-
-    px_eje_y, _ = a_pixels(0, 0)
-    canvas.create_line(px_eje_y, 0, px_eje_y, h, fill="#5b7cfa", width=2)
+    cx = -C / (2 * A) if A != 0 else 0
+    cy = -D / (2 * B) if B != 0 else 0
 
     px_c, py_c = a_pixels(cx, cy)
     canvas.create_oval(
@@ -50,7 +109,7 @@ def graficar_conica(canvas, coeficientes):
 
     def dibujar_punto(x, y):
         nonlocal puntos_graficados
-        if cx - rango <= x <= cx + rango and cy - rango <= y <= cy + rango:
+        if x_min <= x <= x_max and y_min <= y <= y_max:
             px, py = a_pixels(x, y)
             canvas.create_rectangle(
                 px - 1,
@@ -62,10 +121,11 @@ def graficar_conica(canvas, coeficientes):
             )
             puntos_graficados += 1
 
-    paso = (rango * 2) / 1200.0
+    paso_x = max((x_max - x_min) / 1400.0, 0.005)
+    paso_y = max((y_max - y_min) / 1400.0, 0.005)
 
-    x = cx - rango
-    while x <= cx + rango:
+    x = x_min
+    while x <= x_max:
         c_eq = A * x * x + C * x + E
         if B == 0:
             if D != 0:
@@ -76,10 +136,10 @@ def graficar_conica(canvas, coeficientes):
                 raiz = delta ** 0.5
                 dibujar_punto(x, (-D + raiz) / (2 * B))
                 dibujar_punto(x, (-D - raiz) / (2 * B))
-        x += paso
+        x += paso_x
 
-    y = cy - rango
-    while y <= cy + rango:
+    y = y_min
+    while y <= y_max:
         c_eq = B * y * y + D * y + E
         if A == 0:
             if C != 0:
@@ -90,7 +150,7 @@ def graficar_conica(canvas, coeficientes):
                 raiz = delta ** 0.5
                 dibujar_punto((-C + raiz) / (2 * A), y)
                 dibujar_punto((-C - raiz) / (2 * A), y)
-        y += paso
+        y += paso_y
 
     if puntos_graficados == 0:
         canvas.create_text(
@@ -102,7 +162,7 @@ def graficar_conica(canvas, coeficientes):
         )
 
 
-def graficar_funcion_por_tramos(canvas, analisis):
+def graficar_funcion_por_tramos(canvas, analisis, vista=None):
     canvas.delete("all")
     canvas.update_idletasks()
     w = canvas.winfo_width()
@@ -112,60 +172,49 @@ def graficar_funcion_por_tramos(canvas, analisis):
         w, h = 600, 500
 
     a = analisis["a"]
-    cx = a
-    cy = 0.0
+    if vista is None:
+        vista = obtener_vista_tramos(analisis)
 
-    rango = 10.0
-    escala = min(w, h) / (rango * 2)
+    escala = min(w, h) / (vista["rango"] * 2)
 
     def a_pixels(x, y):
-        px = w / 2 + (x - cx) * escala
-        py = h / 2 - (y - cy) * escala
+        px = w / 2 + (x - vista["cx"]) * escala
+        py = h / 2 - (y - vista["cy"]) * escala
         return px, py
 
-    # Dibujar cuadrícula
-    for i in range(-int(rango), int(rango) + 1):
-        # vertical grid line
-        px, _ = a_pixels(cx + i, 0)
-        canvas.create_line(px, 0, px, h, fill="#e6f2ff")
-        # horizontal grid line
-        _, py = a_pixels(0, cy + i)
-        canvas.create_line(0, py, w, py, fill="#e6f2ff")
-
-    # Eje X (y = 0)
-    _, py_eje_x = a_pixels(0, 0)
-    canvas.create_line(0, py_eje_x, w, py_eje_x, fill="#5b7cfa", width=2)
-
-    # Eje Y (x = 0)
-    px_eje_y, _ = a_pixels(0, 0)
-    canvas.create_line(px_eje_y, 0, px_eje_y, h, fill="#5b7cfa", width=2)
+    _, x_min, x_max, y_min, y_max, paso_tick = _dibujar_cuadricula_y_ejes(canvas, w, h, vista, a_pixels)
 
     # Ticks y etiquetas del Eje X
-    for i in range(-int(rango), int(rango) + 1):
-        if i == 0:
+    i = int(x_min // paso_tick) - 1
+    while i * paso_tick <= x_max + paso_tick:
+        val_x = i * paso_tick
+        i += 1
+        if abs(val_x) < 1e-9:
             continue
-        val_x = cx + i
         px, py = a_pixels(val_x, 0)
-        if 0 <= px <= w:
+        if 0 <= px <= w and 0 <= py <= h:
             canvas.create_line(px, py - 3, px, py + 3, fill="#5b7cfa", width=1.5)
-            val_str = f"{val_x:.1f}".rstrip("0").rstrip(".")
+            val_str = _formatear_tick(val_x)
             canvas.create_text(px, py + 12, text=val_str, fill="#172554", font=("Segoe UI", 8))
 
     # Ticks y etiquetas del Eje Y
-    for i in range(-int(rango), int(rango) + 1):
-        if i == 0:
+    i = int(y_min // paso_tick) - 1
+    while i * paso_tick <= y_max + paso_tick:
+        val_y = i * paso_tick
+        i += 1
+        if abs(val_y) < 1e-9:
             continue
-        val_y = cy + i
         px, py = a_pixels(0, val_y)
-        if 0 <= py <= h:
+        if 0 <= px <= w and 0 <= py <= h:
             canvas.create_line(px - 3, py, px + 3, py, fill="#5b7cfa", width=1.5)
-            val_str = f"{val_y:.1f}".rstrip("0").rstrip(".")
+            val_str = _formatear_tick(val_y)
             canvas.create_text(px - 12, py, text=val_str, fill="#172554", font=("Segoe UI", 8), anchor="e")
 
     # Línea de discontinuidad en x = a (roja segmentada)
     px_a, _ = a_pixels(a, 0)
-    canvas.create_line(px_a, 0, px_a, h, fill="#ef4444", dash=(4, 4), width=1.5)
-    canvas.create_text(px_a + 12, 10, text=f"x = {a}", fill="#ef4444", anchor="nw", font=("Segoe UI", 9, "bold"))
+    if -20 <= px_a <= w + 20:
+        canvas.create_line(px_a, 0, px_a, h, fill="#ef4444", dash=(4, 4), width=1.5)
+        canvas.create_text(px_a + 12, 10, text=f"x = {a}", fill="#ef4444", anchor="nw", font=("Segoe UI", 9, "bold"))
 
     # Dibujar segmentos
     segmentos = analisis.get("puntos_grafico", [])
@@ -214,4 +263,3 @@ def graficar_funcion_por_tramos(canvas, analisis):
             fill="#7c3aed",
             font=("Segoe UI", 13, "bold"),
         )
-
