@@ -1,4 +1,4 @@
-def marcar_elementos_parabola(canvas, coeficientes, a_pixels, limites_visibles):
+def marcar_elementos_parabola(canvas, coeficientes, a_pixels, limites_visibles, mostrar_nombres=True):
     A = coeficientes["A"]
     B = coeficientes["B"]
     C = coeficientes["C"]
@@ -25,14 +25,15 @@ def marcar_elementos_parabola(canvas, coeficientes, a_pixels, limites_visibles):
         px1, py1 = a_pixels(x1, y1)
         px2, py2 = a_pixels(x2, y2)
         canvas.create_line(px1, py1, px2, py2, fill="#2563eb", width=2, arrow="last")
-        canvas.create_text(
-            (px1 + px2) / 2 + 10,
-            (py1 + py2) / 2,
-            text=texto,
-            fill="#2563eb",
-            anchor="w",
-            font=("Segoe UI", 9, "bold"),
-        )
+        if mostrar_nombres:
+            canvas.create_text(
+                (px1 + px2) / 2 + 10,
+                (py1 + py2) / 2,
+                text=texto,
+                fill="#2563eb",
+                anchor="w",
+                font=("Segoe UI", 9, "bold"),
+            )
 
     def dibujar_leyenda():
         # Fondo y borde de la leyenda
@@ -82,7 +83,8 @@ def marcar_elementos_parabola(canvas, coeficientes, a_pixels, limites_visibles):
         dibujar_punto_destacado(foco_x, foco_y, "#00aa00")
         dibujar_punto_destacado(lado_recto_1[0], lado_recto_1[1], "#d946ef", radio=4)
         dibujar_punto_destacado(lado_recto_2[0], lado_recto_2[1], "#d946ef", radio=4)
-        dibujar_leyenda()
+        if mostrar_nombres:
+            dibujar_leyenda()
         
     elif A == 0 and B != 0:
         # Parábola horizontal: B y^2 + C x + D y + E = 0
@@ -106,4 +108,5 @@ def marcar_elementos_parabola(canvas, coeficientes, a_pixels, limites_visibles):
         dibujar_punto_destacado(foco_x, foco_y, "#00aa00")
         dibujar_punto_destacado(lado_recto_1[0], lado_recto_1[1], "#d946ef", radio=4)
         dibujar_punto_destacado(lado_recto_2[0], lado_recto_2[1], "#d946ef", radio=4)
-        dibujar_leyenda()
+        if mostrar_nombres:
+            dibujar_leyenda()

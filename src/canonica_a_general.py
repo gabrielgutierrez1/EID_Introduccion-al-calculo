@@ -30,13 +30,14 @@ def transformar_canonica_a_general(coeficientes, transformacion):
     forma_canonica = transformacion.get("forma_canonica")
 
     if not forma_canonica:
-        pasos.append("No hay forma canonica disponible para aplicar el procedimiento inverso.")
+        pasos.append("• No hay forma canónica disponible.")
         return {"pasos": pasos, "ecuacion_general": None}
 
-    pasos.append(f"Partimos desde la forma canonica: {forma_canonica}")
+    pasos.append(f"• Forma canónica original:")
+    pasos.append(f"  {forma_canonica}")
 
     if A == 0 and B == 0:
-        pasos.append("No es posible volver desde una forma canonica porque no hay terminos cuadraticos.")
+        pasos.append("• No hay términos cuadráticos.")
         return {"pasos": pasos, "ecuacion_general": None}
 
     if A != 0 and B != 0:
@@ -53,15 +54,10 @@ def transformar_canonica_a_general(coeficientes, transformacion):
             coef_y = 2 * q / b2
             constante = (p * p / a2) + (q * q / b2) - 1
 
-            pasos.append(
-                f"Leemos desde la canonica: (x + {formatear_numero(p)})^2 / {formatear_numero(a2)} + (y + {formatear_numero(q)})^2 / {formatear_numero(b2)} = 1"
-            )
-            pasos.append(
-                f"Expandimos cuadrados: (x^2 + {formatear_numero(2 * p)}x + {formatear_numero(p * p)}) / {formatear_numero(a2)} + (y^2 + {formatear_numero(2 * q)}y + {formatear_numero(q * q)}) / {formatear_numero(b2)} = 1"
-            )
-            pasos.append(
-                f"Distribuimos denominadores: {formatear_numero(coef_x2)}x^2 + {formatear_numero(coef_x)}x + {formatear_numero(p * p / a2)} + {formatear_numero(coef_y2)}y^2 + {formatear_numero(coef_y)}y + {formatear_numero(q * q / b2)} = 1"
-            )
+            pasos.append(f"• Expandiendo cuadrados (x + {formatear_numero(p)})² y (y + {formatear_numero(q)})²:")
+            pasos.append(f"  (x² + {formatear_numero(2 * p)}x + {formatear_numero(p * p)}) / {formatear_numero(a2)} + (y² + {formatear_numero(2 * q)}y + {formatear_numero(q * q)}) / {formatear_numero(b2)} = 1")
+            pasos.append(f"• Distribuyendo denominadores:")
+            pasos.append(f"  {formatear_numero(coef_x2)}x² + {formatear_numero(coef_x)}x + {formatear_numero(p * p / a2)} + {formatear_numero(coef_y2)}y² + {formatear_numero(coef_y)}y + {formatear_numero(q * q / b2)} = 1")
         else:
             if A > 0:
                 a2 = rhs / A
@@ -71,9 +67,6 @@ def transformar_canonica_a_general(coeficientes, transformacion):
                 coef_x = 2 * p / a2
                 coef_y = -2 * q / b2
                 constante = (p * p / a2) - (q * q / b2) - 1
-                pasos.append(
-                    f"Leemos desde la canonica: (x + {formatear_numero(p)})^2 / {formatear_numero(a2)} - (y + {formatear_numero(q)})^2 / {formatear_numero(b2)} = 1"
-                )
             else:
                 a2 = rhs / B
                 b2 = -rhs / A
@@ -82,11 +75,8 @@ def transformar_canonica_a_general(coeficientes, transformacion):
                 coef_x = -2 * p / b2
                 coef_y = 2 * q / a2
                 constante = (q * q / a2) - (p * p / b2) - 1
-                pasos.append(
-                    f"Leemos desde la canonica: (y + {formatear_numero(q)})^2 / {formatear_numero(a2)} - (x + {formatear_numero(p)})^2 / {formatear_numero(b2)} = 1"
-                )
 
-            pasos.append("Expandimos los cuadrados y distribuimos los denominadores.")
+            pasos.append("• Expandiendo cuadrados y distribuyendo denominadores (Hipérbola).")
 
         coeficientes_expandidos = {
             "A": coef_x2,
@@ -96,15 +86,12 @@ def transformar_canonica_a_general(coeficientes, transformacion):
             "E": constante,
         }
         general = ecuacion_general(coeficientes_expandidos)
-        pasos.append(
-            f"Pasamos el 1 al lado izquierdo y ordenamos: {general}"
-        )
+        pasos.append(f"• Igualando a 0:")
+        pasos.append(f"  {general}")
         factor = factor_para_general_original(coeficientes, coeficientes_expandidos)
         coeficientes_finales = multiplicar_coeficientes(coeficientes_expandidos, factor)
-        pasos.append(
-            f"Multiplicamos toda la ecuacion por {formatear_numero(factor)} para dejarla con los coeficientes del ejercicio."
-        )
-        pasos.append(f"Ecuacion general final: {ecuacion_general(coeficientes_finales)}")
+        pasos.append(f"• Multiplicando por factor {formatear_numero(factor)} para volver a enteros originales:")
+        pasos.append(f"  {ecuacion_general(coeficientes_finales)}")
         return {"pasos": pasos, "ecuacion_general": ecuacion_general(coeficientes_finales)}
 
     elif A == 0 and B != 0:
@@ -114,12 +101,9 @@ def transformar_canonica_a_general(coeficientes, transformacion):
         m = -C / B
         constante = k * k + m * h
 
-        pasos.append(
-            f"Usamos la forma parabolica: (y + {formatear_numero(k)})^2 = {formatear_numero(m)}(x - {formatear_numero(h)})"
-        )
-        pasos.append(
-            f"Expandimos: y^2 + {formatear_numero(2 * k)}y + {formatear_numero(k * k)} = {formatear_numero(m)}x - {formatear_numero(m * h)}"
-        )
+        pasos.append(f"• Forma parabólica: (y + {formatear_numero(k)})² = {formatear_numero(m)}(x - {formatear_numero(h)})")
+        pasos.append(f"• Expandiendo cuadrados:")
+        pasos.append(f"  y² + {formatear_numero(2 * k)}y + {formatear_numero(k * k)} = {formatear_numero(m)}x - {formatear_numero(m * h)}")
         coeficientes_expandidos = {
             "A": 0,
             "B": 1,
@@ -128,15 +112,12 @@ def transformar_canonica_a_general(coeficientes, transformacion):
             "E": constante,
         }
         general = ecuacion_general(coeficientes_expandidos)
-        pasos.append(
-            f"Pasamos todo al lado izquierdo y ordenamos: {general}"
-        )
+        pasos.append(f"• Igualando a 0:")
+        pasos.append(f"  {general}")
         factor = factor_para_general_original(coeficientes, coeficientes_expandidos)
         coeficientes_finales = multiplicar_coeficientes(coeficientes_expandidos, factor)
-        pasos.append(
-            f"Multiplicamos toda la ecuacion por {formatear_numero(factor)} para dejarla con los coeficientes del ejercicio."
-        )
-        pasos.append(f"Ecuacion general final: {ecuacion_general(coeficientes_finales)}")
+        pasos.append(f"• Multiplicando por factor {formatear_numero(factor)}:")
+        pasos.append(f"  {ecuacion_general(coeficientes_finales)}")
         return {"pasos": pasos, "ecuacion_general": ecuacion_general(coeficientes_finales)}
 
     elif B == 0 and A != 0:
@@ -146,12 +127,9 @@ def transformar_canonica_a_general(coeficientes, transformacion):
         m = -D / A
         constante = h * h + m * k
 
-        pasos.append(
-            f"Usamos la forma parabolica: (x + {formatear_numero(h)})^2 = {formatear_numero(m)}(y - {formatear_numero(k)})"
-        )
-        pasos.append(
-            f"Expandimos: x^2 + {formatear_numero(2 * h)}x + {formatear_numero(h * h)} = {formatear_numero(m)}y - {formatear_numero(m * k)}"
-        )
+        pasos.append(f"• Forma parabólica: (x + {formatear_numero(h)})² = {formatear_numero(m)}(y - {formatear_numero(k)})")
+        pasos.append(f"• Expandiendo cuadrados:")
+        pasos.append(f"  x² + {formatear_numero(2 * h)}x + {formatear_numero(h * h)} = {formatear_numero(m)}y - {formatear_numero(m * k)}")
         coeficientes_expandidos = {
             "A": 1,
             "B": 0,
@@ -160,15 +138,12 @@ def transformar_canonica_a_general(coeficientes, transformacion):
             "E": constante,
         }
         general = ecuacion_general(coeficientes_expandidos)
-        pasos.append(
-            f"Pasamos todo al lado izquierdo y ordenamos: {general}"
-        )
+        pasos.append(f"• Igualando a 0:")
+        pasos.append(f"  {general}")
         factor = factor_para_general_original(coeficientes, coeficientes_expandidos)
         coeficientes_finales = multiplicar_coeficientes(coeficientes_expandidos, factor)
-        pasos.append(
-            f"Multiplicamos toda la ecuacion por {formatear_numero(factor)} para dejarla con los coeficientes del ejercicio."
-        )
-        pasos.append(f"Ecuacion general final: {ecuacion_general(coeficientes_finales)}")
+        pasos.append(f"• Multiplicando por factor {formatear_numero(factor)}:")
+        pasos.append(f"  {ecuacion_general(coeficientes_finales)}")
         return {"pasos": pasos, "ecuacion_general": ecuacion_general(coeficientes_finales)}
 
     return {"pasos": pasos, "ecuacion_general": None}
