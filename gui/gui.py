@@ -11,12 +11,15 @@ if PROYECTO_RAIZ not in sys.path:
 from src.rut import validar_rut, obtener_digitos
 from src.conicas import analizar_conica
 from src.funciones_por_tramos import analizar_funcion_por_tramos, formatear_numero
-from .graficos import (
+from gui.graficos import (
     graficar_conica,
     graficar_funcion_por_tramos,
     obtener_vista_conica,
     obtener_vista_tramos,
 )
+import threading
+from src.buscar_ruts import buscar_casos_prueba
+
 
 
 def formatear_resultado_rut(resultado):
@@ -241,8 +244,10 @@ def iniciar_interfaz():
 
     tab_conicas = ttk.Frame(notebook)
     tab_tramos = ttk.Frame(notebook)
+    tab_ruts = ttk.Frame(notebook)
     notebook.add(tab_conicas, text=" Cónicas ")
     notebook.add(tab_tramos, text=" Funciones por Tramo ")
+    notebook.add(tab_ruts, text=" Casos de Prueba ")
 
     # Pestaña 1: Cónicas
     paneles_frame = ttk.Frame(tab_conicas)
@@ -268,12 +273,51 @@ def iniciar_interfaz():
     canvas_grafico = tk.Canvas(frame_grafico, bg=color_grafico, highlightthickness=1, highlightbackground=color_borde)
     canvas_grafico.pack(fill="both", expand=True)
 
-    # Lado Derecho: Resultados (Cónicas)
-    frame_resultados = tk.LabelFrame(paneles_frame, text=" Memoria de Cálculo ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
-    frame_resultados.pack(side="right", fill="y")
+    # Lado Derecho: Contenedor para Resultados y Elementos Geométricos
+    frame_derecha = ttk.Frame(paneles_frame)
+    frame_derecha.pack(side="right", fill="y", padx=(10, 0))
+
+    frame_resultados = tk.LabelFrame(frame_derecha, text=" Memoria de Cálculo ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
+    frame_resultados.pack(fill="both", expand=True, pady=(0, 10))
 
     txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=10, pady=10, highlightthickness=1, highlightbackground=color_borde)
     txt_resultados.pack(fill="both", expand=True)
+
+    # Panel de Elementos Geométricos (Fase 4)
+    frame_elementos = tk.LabelFrame(frame_derecha, text=" Defensa Oral: Elementos ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
+    frame_elementos.pack(fill="x", side="bottom")
+
+    campos_elementos = {}
+    nombres_campos = [
+        ("centro", "Centro:"),
+        ("vertices", "Vértice(s):"),
+        ("focos", "Foco(s):"),
+        ("eje_mayor", "Eje Mayor / Transverso:"),
+        ("eje_menor", "Eje Menor / Conjugado:"),
+        ("directriz", "Directriz:"),
+    ]
+
+    for i, (clave, texto) in enumerate(nombres_campos):
+        lbl = ttk.Label(frame_elementos, text=texto, background=color_panel)
+        lbl.grid(row=i, column=0, sticky="e", pady=3, padx=5)
+        entry = ttk.Entry(frame_elementos, width=25)
+        entry.grid(row=i, column=1, sticky="w", pady=3, padx=5)
+        campos_elementos[clave] = {"label": lbl, "entry": entry}
+
+    def ocultar_campos():
+        for clave in campos_elementos:
+            campos_elementos[clave]["label"].grid_remove()
+            campos_elementos[clave]["entry"].grid_remove()
+            campos_elementos[clave]["entry"].delete(0, tk.END)
+
+    def mostrar_campos(claves):
+        ocultar_campos()
+        for i, (clave, _texto) in enumerate(nombres_campos):
+            if clave in claves:
+                campos_elementos[clave]["label"].grid()
+                campos_elementos[clave]["entry"].grid()
+    
+    ocultar_campos()
 
     # Pestaña 2: Funciones por Tramo
     paneles_tramos_frame = ttk.Frame(tab_tramos)
@@ -420,6 +464,17 @@ def iniciar_interfaz():
             ultimo_grafico["vista"] = obtener_vista_conica(ultimo_grafico["coeficientes"])
             graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"], ultimo_grafico["vista"])
             
+            # Mostrar los inputs correspondientes a la cónica
+            tipo_conica = resultado_conica.get("tipo", "").lower()
+            if "circunferencia" in tipo_conica:
+                mostrar_campos(["centro"])
+            elif "parábola" in tipo_conica or "parabola" in tipo_conica:
+                mostrar_campos(["vertices", "focos", "directriz"])
+            elif "elipse" in tipo_conica or "hipérbola" in tipo_conica or "hiperbola" in tipo_conica:
+                mostrar_campos(["centro", "vertices", "focos", "eje_mayor", "eje_menor"])
+            else:
+                ocultar_campos()
+            
             # Funciones por tramos
             resultado_tramos = analizar_funcion_por_tramos(digitos)
             lineas_tramos.extend(formatear_resultado_tramos(resultado_tramos))
@@ -432,6 +487,7 @@ def iniciar_interfaz():
             ultimo_grafico["arrastre"] = None
             ultimo_grafico["movio"] = False
             canvas_grafico.delete("all")
+            ocultar_campos()
             
             ultimo_grafico_tramos["analisis"] = None
             ultimo_grafico_tramos["vista"] = None
@@ -470,6 +526,53 @@ def iniciar_interfaz():
     canvas_tramos.bind("<B1-Motion>", lambda e: mover_vista(canvas_tramos, ultimo_grafico_tramos, e))
     canvas_tramos.bind("<ButtonRelease-1>", lambda e: terminar_arrastre(ultimo_grafico_tramos, redibujar_grafico_tramos, e))
     canvas_tramos.bind("<Double-Button-1>", lambda _e: reiniciar_vista_tramos())
+    
+    # --- Pestaña 3: Casos de Prueba (RUTs) ---
+    frame_ruts_main = ttk.Frame(tab_ruts, padding="20 20 20 20")
+    frame_ruts_main.pack(fill="both", expand=True)
+    
+    lbl_ruts_info = ttk.Label(frame_ruts_main, text="Genera 4 RUTs válidos reales (con su DV correcto) para probar las 4 cónicas requeridas:", font=("Segoe UI", 12))
+    lbl_ruts_info.pack(pady=(0, 15))
+    
+    btn_generar_ruts = ttk.Button(frame_ruts_main, text="▶ Generar RUTs de Prueba", style="Accent.TButton")
+    btn_generar_ruts.pack(pady=(0, 20))
+    
+    txt_ruts_resultados = tk.Text(frame_ruts_main, wrap="word", state="disabled", font=("Consolas", 12), height=10, bg="#f8fbff", fg=color_texto, relief="flat", padx=20, pady=20, highlightthickness=1, highlightbackground=color_borde)
+    txt_ruts_resultados.pack(fill="both", expand=True)
+    
+    def procesar_busqueda():
+        btn_generar_ruts.config(text="Buscando... (puede tardar unos segundos)", state="disabled")
+        txt_ruts_resultados.configure(state="normal")
+        txt_ruts_resultados.delete("1.0", tk.END)
+        txt_ruts_resultados.insert(tk.END, "Buscando casos de prueba en segundo plano... por favor espera.\n")
+        txt_ruts_resultados.configure(state="disabled")
+        
+        def tarea_en_hilo():
+            casos = buscar_casos_prueba()
+            
+            def actualizar_gui():
+                txt_ruts_resultados.configure(state="normal")
+                txt_ruts_resultados.delete("1.0", tk.END)
+                if None in casos.values():
+                    txt_ruts_resultados.insert(tk.END, "No se encontraron todos los casos en el límite de intentos.\n\n")
+                else:
+                    txt_ruts_resultados.insert(tk.END, "¡Búsqueda completada! Estos RUTs son matemáticamente válidos:\n\n")
+                
+                for tipo, rut in casos.items():
+                    val = rut if rut else "No encontrado"
+                    txt_ruts_resultados.insert(tk.END, f"  • {tipo}: {val}\n")
+                
+                txt_ruts_resultados.configure(state="disabled")
+                btn_generar_ruts.config(text="▶ Generar RUTs de Prueba", state="normal")
+            
+            root.after(0, actualizar_gui)
+            
+        t = threading.Thread(target=tarea_en_hilo)
+        t.daemon = True
+        t.start()
+        
+    btn_generar_ruts.config(command=procesar_busqueda)
+    
     entry_rut.focus_set()
 
     root.mainloop()
