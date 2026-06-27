@@ -1,24 +1,4 @@
-def formatear_numero(numero):
-    if numero is None:
-        return "no definida"
-
-    if isinstance(numero, str):
-        return numero
-
-    if abs(numero) < 0.000000001:
-        numero = 0
-
-    if numero == int(numero):
-        return str(int(numero))
-
-    return f"{numero:.6f}".rstrip("0").rstrip(".")
-
-
-def son_iguales(valor_1, valor_2):
-    if isinstance(valor_1, str) or isinstance(valor_2, str):
-        return valor_1 == valor_2
-
-    return abs(valor_1 - valor_2) < 0.000000001
+from .utils import formatear_numero, son_iguales
 
 
 def validar_digitos(digitos):

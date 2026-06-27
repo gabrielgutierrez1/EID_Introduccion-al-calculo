@@ -1,11 +1,5 @@
 from src.elementos import calcular_elementos_geometricos
-
-def formatear_num(num):
-    if abs(num) < 1e-9:
-        return "0"
-    if abs(num - round(num)) < 1e-9:
-        return str(int(round(num)))
-    return f"{num:.4f}".rstrip("0").rstrip(".")
+from src.utils import formatear_numero
 
 def generar_solucionario(coeficientes, tipo):
     A = coeficientes["A"]
@@ -20,30 +14,30 @@ def generar_solucionario(coeficientes, tipo):
         
     lineas = []
     lineas.append((f"{tipo.upper()}", "titulo"))
-    lineas.append((f"Ecuación general: {formatear_num(A)}x² + {formatear_num(B)}y² + {formatear_num(C)}x + {formatear_num(D)}y + {formatear_num(E)} = 0", "subtitulo"))
+    lineas.append((f"Ecuación general: {formatear_numero(A)}x² + {formatear_numero(B)}y² + {formatear_numero(C)}x + {formatear_numero(D)}y + {formatear_numero(E)} = 0", "subtitulo"))
     
     if tipo == "Circunferencia":
-        h, k = elementos["centro"]
+        h, k = elementos["h"], elementos["k"]
         r = elementos["radio"]
         
         lineas.append(("Centro (h, k)", "subtitulo"))
         lineas.append(("h = -C / (2A)   |   k = -D / (2A)", "formula"))
-        lineas.append((f"h = -({formatear_num(C)}) / (2*{formatear_num(A)})  ->  {formatear_num(h)}", "calculo"))
-        lineas.append((f"k = -({formatear_num(D)}) / (2*{formatear_num(A)})  ->  {formatear_num(k)}", "calculo"))
-        lineas.append((f"C({formatear_num(h)}, {formatear_num(k)})", "resultado"))
+        lineas.append((f"h = -({formatear_numero(C)}) / (2*{formatear_numero(A)})  ->  {formatear_numero(h)}", "calculo"))
+        lineas.append((f"k = -({formatear_numero(D)}) / (2*{formatear_numero(A)})  ->  {formatear_numero(k)}", "calculo"))
+        lineas.append((f"C({formatear_numero(h)}, {formatear_numero(k)})", "resultado"))
         
         lineas.append(("Radio (r)", "subtitulo"))
         lineas.append(("r = √(C² + D² - 4AE) / |2A|", "formula"))
-        disc = C**2 + D**2 - 4*A*E
-        lineas.append((f"Δ = ({formatear_num(C)})² + ({formatear_num(D)})² - 4({formatear_num(A)})({formatear_num(E)}) = {formatear_num(disc)}", "calculo"))
-        lineas.append((f"r = √{formatear_num(disc)} / {formatear_num(abs(2*A))}", "calculo"))
-        lineas.append((f"r = {formatear_num(r)}", "resultado"))
+        disc = elementos["discriminante"]
+        lineas.append((f"Δ = ({formatear_numero(C)})² + ({formatear_numero(D)})² - 4({formatear_numero(A)})({formatear_numero(E)}) = {formatear_numero(disc)}", "calculo"))
+        lineas.append((f"r = √{formatear_numero(disc)} / {formatear_numero(abs(2*A))}", "calculo"))
+        lineas.append((f"r = {formatear_numero(r)}", "resultado"))
         
     elif tipo == "Parabola" or tipo == "Parábola":
-        es_vertical = (A != 0 and B == 0)
-        h, k = elementos["vertices"][0]
+        es_vertical = elementos["es_vertical"]
+        h, k = elementos["h"], elementos["k"]
+        p_val = elementos["p"]
         f_x, f_y = elementos["focos"][0]
-        p_val = f_y - k if es_vertical else f_x - h
         
         lineas.append(("Orientación", "subtitulo"))
         lineas.append((("Vertical" if es_vertical else "Horizontal"), "resultado"))
@@ -51,107 +45,101 @@ def generar_solucionario(coeficientes, tipo):
         lineas.append(("Vértice V(h, k)", "subtitulo"))
         if es_vertical:
             lineas.append(("h = -C / (2A)", "formula"))
-            lineas.append((f"h = -({formatear_num(C)}) / (2*{formatear_num(A)})  ->  {formatear_num(h)}", "calculo"))
-            lineas.append((f"k = -({formatear_num(A)}*{formatear_num(h)}² + {formatear_num(C)}*{formatear_num(h)} + {formatear_num(E)}) / {formatear_num(D)}  ->  {formatear_num(k)}", "calculo"))
+            lineas.append((f"h = -({formatear_numero(C)}) / (2*{formatear_numero(A)})  ->  {formatear_numero(h)}", "calculo"))
+            lineas.append((f"k = -({formatear_numero(A)}*{formatear_numero(h)}² + {formatear_numero(C)}*{formatear_numero(h)} + {formatear_numero(E)}) / {formatear_numero(D)}  ->  {formatear_numero(k)}", "calculo"))
         else:
             lineas.append(("k = -D / (2B)", "formula"))
-            lineas.append((f"k = -({formatear_num(D)}) / (2*{formatear_num(B)})  ->  {formatear_num(k)}", "calculo"))
-            lineas.append((f"h = -({formatear_num(B)}*{formatear_num(k)}² + {formatear_num(D)}*{formatear_num(k)} + {formatear_num(E)}) / {formatear_num(C)}  ->  {formatear_num(h)}", "calculo"))
-        lineas.append((f"V({formatear_num(h)}, {formatear_num(k)})", "resultado"))
+            lineas.append((f"k = -({formatear_numero(D)}) / (2*{formatear_numero(B)})  ->  {formatear_numero(k)}", "calculo"))
+            lineas.append((f"h = -({formatear_numero(B)}*{formatear_numero(k)}² + {formatear_numero(D)}*{formatear_numero(k)} + {formatear_numero(E)}) / {formatear_numero(C)}  ->  {formatear_numero(h)}", "calculo"))
+        lineas.append((f"V({formatear_numero(h)}, {formatear_numero(k)})", "resultado"))
         
         lineas.append(("Parámetro (p)", "subtitulo"))
         if es_vertical:
             lineas.append(("p = -D / (4A)", "formula"))
-            lineas.append((f"p = -({formatear_num(D)}) / (4*{formatear_num(A)})", "calculo"))
+            lineas.append((f"p = -({formatear_numero(D)}) / (4*{formatear_numero(A)})", "calculo"))
         else:
             lineas.append(("p = -C / (4B)", "formula"))
-            lineas.append((f"p = -({formatear_num(C)}) / (4*{formatear_num(B)})", "calculo"))
-        lineas.append((f"p = {formatear_num(p_val)}", "resultado"))
+            lineas.append((f"p = -({formatear_numero(C)}) / (4*{formatear_numero(B)})", "calculo"))
+        lineas.append((f"p = {formatear_numero(p_val)}", "resultado"))
         
         lineas.append(("Foco (F)", "subtitulo"))
         if es_vertical:
             lineas.append(("F(h, k + p)", "formula"))
         else:
             lineas.append(("F(h + p, k)", "formula"))
-        lineas.append((f"F({formatear_num(f_x)}, {formatear_num(f_y)})", "resultado"))
+        lineas.append((f"F({formatear_numero(f_x)}, {formatear_numero(f_y)})", "resultado"))
         
         lineas.append(("Directriz y Eje", "subtitulo"))
         if es_vertical:
-            lineas.append((f"Directriz: y = {formatear_num(elementos['directriz'])}", "calculo"))
-            lineas.append((f"Eje de simetría: x = {formatear_num(elementos['eje'])}", "calculo"))
+            lineas.append((f"Directriz: y = {formatear_numero(elementos['directriz'])}", "calculo"))
+            lineas.append((f"Eje de simetría: x = {formatear_numero(elementos['eje'])}", "calculo"))
         else:
-            lineas.append((f"Directriz: x = {formatear_num(elementos['directriz'])}", "calculo"))
-            lineas.append((f"Eje de simetría: y = {formatear_num(elementos['eje'])}", "calculo"))
+            lineas.append((f"Directriz: x = {formatear_numero(elementos['directriz'])}", "calculo"))
+            lineas.append((f"Eje de simetría: y = {formatear_numero(elementos['eje'])}", "calculo"))
             
     elif tipo == "Elipse":
-        h, k = elementos["centro"]
-        a = elementos["eje_mayor"] / 2
-        b = elementos["eje_menor"] / 2
-        c = (a**2 - b**2)**0.5 if a > b else (b**2 - a**2)**0.5
-        
-        rhs = (C * C) / (4 * A) + (D * D) / (4 * B) - E
-        ax2 = rhs / A
-        by2 = rhs / B
-        es_horizontal = ax2 > by2
+        h, k = elementos["h"], elementos["k"]
+        a, b, c = elementos["a"], elementos["b"], elementos["c"]
+        rhs = elementos["rhs"]
+        ax2, by2 = elementos["ax2"], elementos["by2"]
+        es_horizontal = elementos["es_horizontal"]
         
         lineas.append(("Centro (h, k)", "subtitulo"))
         lineas.append(("h = -C / (2A)   |   k = -D / (2B)", "formula"))
-        lineas.append((f"h = -({formatear_num(C)}) / (2*{formatear_num(A)})  ->  {formatear_num(h)}", "calculo"))
-        lineas.append((f"k = -({formatear_num(D)}) / (2*{formatear_num(B)})  ->  {formatear_num(k)}", "calculo"))
-        lineas.append((f"C({formatear_num(h)}, {formatear_num(k)})", "resultado"))
+        lineas.append((f"h = -({formatear_numero(C)}) / (2*{formatear_numero(A)})  ->  {formatear_numero(h)}", "calculo"))
+        lineas.append((f"k = -({formatear_numero(D)}) / (2*{formatear_numero(B)})  ->  {formatear_numero(k)}", "calculo"))
+        lineas.append((f"C({formatear_numero(h)}, {formatear_numero(k)})", "resultado"))
         
         lineas.append(("Parámetros (a, b, c)", "subtitulo"))
-        lineas.append((f"Término independiente (rhs) = {formatear_num(rhs)}", "calculo"))
-        lineas.append((f"rx² = rhs/A = {formatear_num(ax2)}  |  ry² = rhs/B = {formatear_num(by2)}", "calculo"))
+        lineas.append((f"Término independiente (rhs) = {formatear_numero(rhs)}", "calculo"))
+        lineas.append((f"rx² = rhs/A = {formatear_numero(ax2)}  |  ry² = rhs/B = {formatear_numero(by2)}", "calculo"))
         lineas.append((("Horizontal" if es_horizontal else "Vertical"), "resultado"))
-        lineas.append((f"a = √max(rx², ry²) = {formatear_num(a)}", "calculo"))
-        lineas.append((f"b = √min(rx², ry²) = {formatear_num(b)}", "calculo"))
-        lineas.append((f"c = √(a² - b²) = {formatear_num(c)}", "calculo"))
+        lineas.append((f"a = √max(rx², ry²) = {formatear_numero(a)}", "calculo"))
+        lineas.append((f"b = √min(rx², ry²) = {formatear_numero(b)}", "calculo"))
+        lineas.append((f"c = √(a² - b²) = {formatear_numero(c)}", "calculo"))
         
         lineas.append(("Longitud de Ejes", "subtitulo"))
-        lineas.append((f"Eje mayor = 2a = 2({formatear_num(a)}) = {formatear_num(elementos['eje_mayor'])}", "resultado"))
-        lineas.append((f"Eje menor = 2b = 2({formatear_num(b)}) = {formatear_num(elementos['eje_menor'])}", "resultado"))
+        lineas.append((f"Eje mayor = 2a = 2({formatear_numero(a)}) = {formatear_numero(elementos['eje_mayor'])}", "resultado"))
+        lineas.append((f"Eje menor = 2b = 2({formatear_numero(b)}) = {formatear_numero(elementos['eje_menor'])}", "resultado"))
         
         lineas.append(("Vértices Reales", "subtitulo"))
         v1, v2 = elementos["vertices"]
-        lineas.append((f"V1({formatear_num(v1[0])}, {formatear_num(v1[1])})   V2({formatear_num(v2[0])}, {formatear_num(v2[1])})", "resultado"))
+        lineas.append((f"V1({formatear_numero(v1[0])}, {formatear_numero(v1[1])})   V2({formatear_numero(v2[0])}, {formatear_numero(v2[1])})", "resultado"))
         
         lineas.append(("Focos", "subtitulo"))
         f1, f2 = elementos["focos"]
-        lineas.append((f"F1({formatear_num(f1[0])}, {formatear_num(f1[1])})   F2({formatear_num(f2[0])}, {formatear_num(f2[1])})", "resultado"))
+        lineas.append((f"F1({formatear_numero(f1[0])}, {formatear_numero(f1[1])})   F2({formatear_numero(f2[0])}, {formatear_numero(f2[1])})", "resultado"))
 
     elif tipo == "Hiperbola" or tipo == "Hipérbola":
-        h, k = elementos["centro"]
-        a = elementos["eje_mayor"] / 2
-        b = elementos["eje_menor"] / 2
-        c = (a**2 + b**2)**0.5
-        
-        rhs = (C * C) / (4 * A) + (D * D) / (4 * B) - E
-        es_horizontal = A / rhs > 0
+        h, k = elementos["h"], elementos["k"]
+        a, b, c = elementos["a"], elementos["b"], elementos["c"]
+        rhs = elementos["rhs"]
+        es_horizontal = elementos["es_horizontal"]
         
         lineas.append(("Centro (h, k)", "subtitulo"))
         lineas.append(("h = -C / (2A)   |   k = -D / (2B)", "formula"))
-        lineas.append((f"h = -({formatear_num(C)}) / (2*{formatear_num(A)})  ->  {formatear_num(h)}", "calculo"))
-        lineas.append((f"k = -({formatear_num(D)}) / (2*{formatear_num(B)})  ->  {formatear_num(k)}", "calculo"))
-        lineas.append((f"C({formatear_num(h)}, {formatear_num(k)})", "resultado"))
+        lineas.append((f"h = -({formatear_numero(C)}) / (2*{formatear_numero(A)})  ->  {formatear_numero(h)}", "calculo"))
+        lineas.append((f"k = -({formatear_numero(D)}) / (2*{formatear_numero(B)})  ->  {formatear_numero(k)}", "calculo"))
+        lineas.append((f"C({formatear_numero(h)}, {formatear_numero(k)})", "resultado"))
         
         lineas.append(("Parámetros (a, b, c)", "subtitulo"))
-        lineas.append((f"rhs = {formatear_num(rhs)}", "calculo"))
+        lineas.append((f"rhs = {formatear_numero(rhs)}", "calculo"))
         lineas.append((("Horizontal" if es_horizontal else "Vertical"), "resultado"))
-        lineas.append((f"a = {formatear_num(a)}", "calculo"))
-        lineas.append((f"b = {formatear_num(b)}", "calculo"))
-        lineas.append((f"c = √(a² + b²) = {formatear_num(c)}", "calculo"))
+        lineas.append((f"a = {formatear_numero(a)}", "calculo"))
+        lineas.append((f"b = {formatear_numero(b)}", "calculo"))
+        lineas.append((f"c = √(a² + b²) = {formatear_numero(c)}", "calculo"))
         
         lineas.append(("Longitud de Ejes", "subtitulo"))
-        lineas.append((f"Eje mayor (transverso) = 2a = 2({formatear_num(a)}) = {formatear_num(elementos['eje_mayor'])}", "resultado"))
-        lineas.append((f"Eje menor (conjugado) = 2b = 2({formatear_num(b)}) = {formatear_num(elementos['eje_menor'])}", "resultado"))
+        lineas.append((f"Eje mayor (transverso) = 2a = 2({formatear_numero(a)}) = {formatear_numero(elementos['eje_mayor'])}", "resultado"))
+        lineas.append((f"Eje menor (conjugado) = 2b = 2({formatear_numero(b)}) = {formatear_numero(elementos['eje_menor'])}", "resultado"))
         
         lineas.append(("Vértices Reales", "subtitulo"))
         v1, v2 = elementos["vertices"]
-        lineas.append((f"V1({formatear_num(v1[0])}, {formatear_num(v1[1])})   V2({formatear_num(v2[0])}, {formatear_num(v2[1])})", "resultado"))
+        lineas.append((f"V1({formatear_numero(v1[0])}, {formatear_numero(v1[1])})   V2({formatear_numero(v2[0])}, {formatear_numero(v2[1])})", "resultado"))
         
         lineas.append(("Focos", "subtitulo"))
         f1, f2 = elementos["focos"]
-        lineas.append((f"F1({formatear_num(f1[0])}, {formatear_num(f1[1])})   F2({formatear_num(f2[0])}, {formatear_num(f2[1])})", "resultado"))
+        lineas.append((f"F1({formatear_numero(f1[0])}, {formatear_numero(f1[1])})   F2({formatear_numero(f2[0])}, {formatear_numero(f2[1])})", "resultado"))
 
     return lineas
+
