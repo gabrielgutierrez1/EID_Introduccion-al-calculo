@@ -86,6 +86,16 @@ def formatear_resultado_conica(resultado):
             for paso in inversa["pasos"]:
                 lineas.append((paso, "calculo"))
 
+    # Agregar el resumen de elementos geométricos
+    from src.solucionario import generar_solucionario
+    lineas_elementos = generar_solucionario(resultado["coeficientes"], resultado["tipo"])
+    
+    # Si pudo generar los elementos (longitud > 1), los añadimos omitiendo el primer título repetitivo
+    if len(lineas_elementos) > 1:
+        lineas.append(("ELEMENTOS GEOMÉTRICOS", "titulo"))
+        # Nos saltamos el índice 0 que es el nombre de la cónica en grande y el índice 1 que es la ecuación general de nuevo
+        lineas.extend(lineas_elementos[2:])
+
     return lineas
 
 

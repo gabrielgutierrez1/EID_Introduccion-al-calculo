@@ -108,6 +108,10 @@ def generar_solucionario(coeficientes, tipo):
         lineas.append((f"b = √min(rx², ry²) = {formatear_num(b)}", "calculo"))
         lineas.append((f"c = √(a² - b²) = {formatear_num(c)}", "calculo"))
         
+        lineas.append(("Longitud de Ejes", "subtitulo"))
+        lineas.append((f"Eje mayor = 2a = 2({formatear_num(a)}) = {formatear_num(elementos['eje_mayor'])}", "resultado"))
+        lineas.append((f"Eje menor = 2b = 2({formatear_num(b)}) = {formatear_num(elementos['eje_menor'])}", "resultado"))
+        
         lineas.append(("Vértices Reales", "subtitulo"))
         v1, v2 = elementos["vertices"]
         lineas.append((f"V1({formatear_num(v1[0])}, {formatear_num(v1[1])})   V2({formatear_num(v2[0])}, {formatear_num(v2[1])})", "resultado"))
@@ -137,6 +141,10 @@ def generar_solucionario(coeficientes, tipo):
         lineas.append((f"a = {formatear_num(a)}", "calculo"))
         lineas.append((f"b = {formatear_num(b)}", "calculo"))
         lineas.append((f"c = √(a² + b²) = {formatear_num(c)}", "calculo"))
+        
+        lineas.append(("Longitud de Ejes", "subtitulo"))
+        lineas.append((f"Eje mayor (transverso) = 2a = 2({formatear_num(a)}) = {formatear_num(elementos['eje_mayor'])}", "resultado"))
+        lineas.append((f"Eje menor (conjugado) = 2b = 2({formatear_num(b)}) = {formatear_num(elementos['eje_menor'])}", "resultado"))
         
         lineas.append(("Vértices Reales", "subtitulo"))
         v1, v2 = elementos["vertices"]
