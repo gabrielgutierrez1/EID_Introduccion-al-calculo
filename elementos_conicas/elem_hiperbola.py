@@ -1,4 +1,4 @@
-def marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, limites_visibles):
+def marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, limites_visibles, mostrar_nombres=True):
     A = coeficientes["A"]
     B = coeficientes["B"]
     C = coeficientes["C"]
@@ -113,4 +113,5 @@ def marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, limites_visibles)
     dibujar_punto_destacado(h, k, "#38bdf8")
 
     # 6. Dibujar leyenda
-    dibujar_leyenda()
+    if mostrar_nombres:
+        dibujar_leyenda()

@@ -18,7 +18,10 @@ from gui.graficos import (
     obtener_vista_tramos,
 )
 import threading
+import re
 from src.buscar_ruts import buscar_casos_prueba
+from src.elementos import calcular_elementos_geometricos
+from src.solucionario import generar_solucionario
 
 
 
@@ -26,108 +29,109 @@ def formatear_resultado_rut(resultado):
     lineas = []
 
     if not resultado["valido"] and "error" in resultado:
-        lineas.append("RUT invalido")
-        lineas.append(resultado["error"])
+        lineas.append(("RUT INVÁLIDO", "titulo"))
+        lineas.append((resultado["error"], "subtitulo"))
         return lineas
 
-    lineas.append("Validacion del RUT")
-    lineas.append(f"RUT limpio: {resultado['rut_limpio']}")
-    lineas.append(f"Cuerpo: {resultado['cuerpo']}")
-    lineas.append(f"Digito verificador ingresado: {resultado['dv_ingresado']}")
-    lineas.append("")
-    lineas.append("Procedimiento modulo 11:")
+    lineas.append(("VALIDACIÓN DEL RUT", "titulo"))
+    lineas.append((f"RUT limpio: {resultado['rut_limpio']}", "subtitulo"))
+    lineas.append((f"Cuerpo: {resultado['cuerpo']}", "calculo"))
+    lineas.append((f"Dígito verificador: {resultado['dv_ingresado']}", "calculo"))
 
+    lineas.append(("Procedimiento módulo 11", "subtitulo"))
     for paso in resultado["calculo"]["pasos"]:
-        lineas.append(
-            f"{paso['digito']} x {paso['multiplicador']} = {paso['producto']}"
-        )
+        lineas.append((f"{paso['digito']} x {paso['multiplicador']} = {paso['producto']}", "calculo"))
 
-    lineas.append(f"Suma de productos: {resultado['calculo']['suma']}")
-    lineas.append(f"Resto de la division por 11: {resultado['calculo']['resto']}")
-    lineas.append(f"11 - resto = {resultado['calculo']['valor']}")
-    lineas.append(f"Digito verificador esperado: {resultado['dv_esperado']}")
+    lineas.append((f"Suma de productos: {resultado['calculo']['suma']}", "calculo"))
+    lineas.append((f"Resto de división por 11: {resultado['calculo']['resto']}", "calculo"))
+    lineas.append((f"11 - resto = {resultado['calculo']['valor']}", "calculo"))
+    lineas.append((f"DV esperado: {resultado['dv_esperado']}", "resultado"))
 
     if resultado["valido"]:
-        lineas.append("Conclusion: el RUT es valido.")
+        lineas.append(("Conclusión: el RUT es válido.", "resultado"))
     else:
-        lineas.append("Conclusion: el RUT no es valido.")
+        lineas.append(("Conclusión: el RUT no es válido.", "subtitulo"))
 
     return lineas
 
 def formatear_resultado_conica(resultado):
     lineas = []
-    lineas.append("")
-    lineas.append("-" * 40)
-    lineas.append("Construcción de la Cónica")
-    lineas.append("-" * 40)
+    lineas.append(("CONSTRUCCIÓN DE LA CÓNICA", "titulo"))
 
     for paso in resultado["coeficientes"]["pasos"]:
-        lineas.append(paso)
+        lineas.append((paso, "calculo"))
 
-    lineas.append("")
-    lineas.append(f"Ecuación general: {resultado['ecuacion_general']}")
-    lineas.append(f"Clasificación: {resultado['tipo']}")
+    lineas.append(("Ecuación general", "subtitulo"))
+    lineas.append((resultado['ecuacion_general'], "formula"))
+    
+    lineas.append(("Clasificación", "subtitulo"))
+    lineas.append((resultado['tipo'], "resultado"))
 
     if "forma_canonica" in resultado and resultado["forma_canonica"]:
         transform = resultado["forma_canonica"]
         if transform.get("pasos"):
-            lineas.append("")
-            lineas.append("Transformación a forma canónica:")
+            lineas.append(("Transformación a forma canónica", "subtitulo"))
             for paso in transform["pasos"]:
-                lineas.append(paso)
+                lineas.append((paso, "calculo"))
 
         forma = transform.get("forma_canonica")
         if forma:
-            lineas.append("")
-            lineas.append(f"Forma canónica: {forma}")
+            lineas.append(("Forma canónica", "subtitulo"))
+            lineas.append((forma, "formula"))
 
     if "canonica_a_general" in resultado and resultado["canonica_a_general"]:
         inversa = resultado["canonica_a_general"]
         if inversa.get("pasos"):
-            lineas.append("")
-            lineas.append("Transformación inversa: forma canónica a general:")
+            lineas.append(("Transformación inversa", "subtitulo"))
             for paso in inversa["pasos"]:
-                lineas.append(paso)
+                lineas.append((paso, "calculo"))
+
+    # Agregar el resumen de elementos geométricos
+    from src.solucionario import generar_solucionario
+    lineas_elementos = generar_solucionario(resultado["coeficientes"], resultado["tipo"])
+    
+    # Si pudo generar los elementos (longitud > 1), los añadimos omitiendo el primer título repetitivo
+    if len(lineas_elementos) > 1:
+        lineas.append(("ELEMENTOS GEOMÉTRICOS", "titulo"))
+        # Nos saltamos el índice 0 que es el nombre de la cónica en grande y el índice 1 que es la ecuación general de nuevo
+        lineas.extend(lineas_elementos[2:])
 
     return lineas
 
 
 def formatear_resultado_tramos(resultado):
     lineas = []
-    lineas.append("")
-    lineas.append("-" * 40)
-    lineas.append("Análisis de Función por Tramos")
-    lineas.append("-" * 40)
+    lineas.append(("ANÁLISIS DE FUNCIÓN POR TRAMOS", "titulo"))
 
     funcion = resultado["funcion"]
     caso = resultado["caso"]
     a = resultado["a"]
 
-    lineas.append(f"Caso detectado: {caso['nombre']}")
-    lineas.append(f"Punto crítico de análisis: a = {a}")
-    lineas.append("")
-    lineas.append("Tramos de la función:")
+    lineas.append(("Caso detectado", "subtitulo"))
+    lineas.append((caso['nombre'], "resultado"))
+    
+    lineas.append(("Punto crítico", "subtitulo"))
+    lineas.append((f"a = {a}", "calculo"))
+
+    lineas.append(("Tramos de la función", "subtitulo"))
     for tramo in funcion["tramos"]:
-        lineas.append(f"  • f(x) = {tramo['expresion']} si {tramo['condicion']}")
+        lineas.append((f"f(x) = {tramo['expresion']} si {tramo['condicion']}", "formula"))
 
     if funcion["simplificada"]:
-        lineas.append(f"Fórmula simplificada: {funcion['simplificada']}")
+        lineas.append(("Fórmula simplificada", "subtitulo"))
+        lineas.append((funcion['simplificada'], "formula"))
 
-    lineas.append("")
-    lineas.append("Memoria de cálculo:")
+    lineas.append(("Memoria de cálculo", "subtitulo"))
     for paso in resultado["pasos"]:
-        lineas.append(f"  - {paso}")
+        lineas.append((paso, "calculo"))
 
-    lineas.append("")
-    lineas.append("Tabla de valores cerca de x = a:")
-    lineas.append(f" {'Lado':<10} | {'x':<12} | {'f(x)':<12}")
-    lineas.append("-" * 40)
+    lineas.append(("Tabla de valores cerca de x = a", "subtitulo"))
+    lineas.append((f"{'Lado':<10} | {'x':<12} | {'f(x)':<12}", "calculo"))
+    lineas.append(("-" * 40, "calculo"))
     for fila in resultado["tabla"]:
-        lineas.append(f" {fila['lado']:<10} | {fila['x_texto']:<12} | {fila['f_x_texto']:<12}")
+        lineas.append((f"{fila['lado']:<10} | {fila['x_texto']:<12} | {fila['f_x_texto']:<12}", "calculo"))
 
-    lineas.append("")
-    lineas.append("Respuestas de la defensa:")
-    lineas.append("-" * 40)
+    lineas.append(("Respuestas de la defensa", "titulo"))
 
     lim = resultado["limites"]
     cont = resultado["continuidad"]
@@ -140,13 +144,24 @@ def formatear_resultado_tramos(resultado):
     def_tipo = cont["tipo_discontinuidad"]
     def_just = cont["justificacion"]
 
-    lineas.append(f"• Límite por la izquierda: {def_izq}")
-    lineas.append(f"• Límite por la derecha: {def_der}")
-    lineas.append(f"• Conclusión sobre el límite: {def_ex}")
-    lineas.append(f"• Valor de la función en el punto: {def_val}")
-    lineas.append(f"• Conclusión sobre continuidad: {def_cont}")
-    lineas.append(f"• Tipo de discontinuidad: {def_tipo}")
-    lineas.append(f"• Justificación: {def_just}")
+    lineas.append(("Límite por la izquierda:", "subtitulo"))
+    lineas.append((def_izq, "calculo"))
+    lineas.append(("Límite por la derecha:", "subtitulo"))
+    lineas.append((def_der, "calculo"))
+    lineas.append(("Conclusión sobre el límite:", "subtitulo"))
+    lineas.append((def_ex, "resultado"))
+    
+    lineas.append(("Valor de la función en el punto:", "subtitulo"))
+    lineas.append((def_val, "calculo"))
+    
+    lineas.append(("Conclusión sobre continuidad:", "subtitulo"))
+    lineas.append((def_cont, "resultado"))
+    
+    lineas.append(("Tipo de discontinuidad:", "subtitulo"))
+    lineas.append((def_tipo, "calculo"))
+    
+    lineas.append(("Justificación:", "subtitulo"))
+    lineas.append((def_just, "calculo"))
 
     return lineas
 
@@ -243,9 +258,11 @@ def iniciar_interfaz():
     notebook.pack(fill="both", expand=True)
 
     tab_conicas = ttk.Frame(notebook)
+    tab_defensa = ttk.Frame(notebook)
     tab_tramos = ttk.Frame(notebook)
     tab_ruts = ttk.Frame(notebook)
     notebook.add(tab_conicas, text=" Cónicas ")
+    notebook.add(tab_defensa, text=" Defensa Oral ")
     notebook.add(tab_tramos, text=" Funciones por Tramo ")
     notebook.add(tab_ruts, text=" Casos de Prueba ")
 
@@ -280,12 +297,63 @@ def iniciar_interfaz():
     frame_resultados = tk.LabelFrame(frame_derecha, text=" Memoria de Cálculo ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
     frame_resultados.pack(fill="both", expand=True, pady=(0, 10))
 
-    txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=10, pady=10, highlightthickness=1, highlightbackground=color_borde)
+    txt_resultados = tk.Text(frame_resultados, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=15, pady=15, highlightthickness=1, highlightbackground=color_borde)
     txt_resultados.pack(fill="both", expand=True)
+    
+    txt_resultados.tag_configure("titulo", font=("Segoe UI", 13, "bold"), foreground="#1d4ed8", spacing1=5, spacing3=15, justify="center")
+    txt_resultados.tag_configure("subtitulo", font=("Segoe UI", 11, "bold"), foreground="#334155", spacing1=15, spacing3=5)
+    txt_resultados.tag_configure("formula", font=("Consolas", 10, "italic"), foreground="#64748b", lmargin1=20)
+    txt_resultados.tag_configure("calculo", font=("Consolas", 10), foreground="#475569", lmargin1=20, spacing1=2)
+    txt_resultados.tag_configure("resultado", font=("Consolas", 11, "bold"), foreground="#059669", lmargin1=20, spacing1=6, spacing3=5)
 
-    # Panel de Elementos Geométricos (Fase 4)
-    frame_elementos = tk.LabelFrame(frame_derecha, text=" Defensa Oral: Elementos ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
-    frame_elementos.pack(fill="x", side="bottom")
+    # Pestaña 1B: Defensa Oral
+    paneles_defensa_frame = ttk.Frame(tab_defensa)
+    paneles_defensa_frame.pack(fill="both", expand=True)
+
+    frame_grafico_def = tk.LabelFrame(paneles_defensa_frame, text=" Gráfico para Identificar Puntos ", font=("Segoe UI", 12, "bold"), bg=color_grafico, fg=color_header, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
+    frame_grafico_def.pack(side="left", fill="both", expand=True, padx=(0, 15))
+
+    barra_grafico_def = tk.Frame(frame_grafico_def, bg=color_grafico)
+    barra_grafico_def.pack(fill="x", pady=(0, 8))
+    lbl_ayuda_def = tk.Label(barra_grafico_def, text="Rueda: zoom | Arrastrar: mover | Doble clic: reiniciar", font=("Segoe UI", 9), bg=color_grafico, fg="#475569")
+    lbl_ayuda_def.pack(side="left")
+    btn_reset_def = ttk.Button(barra_grafico_def, text="Reiniciar vista", style="Tool.TButton")
+    btn_reset_def.pack(side="right")
+
+    canvas_defensa = tk.Canvas(frame_grafico_def, bg=color_grafico, highlightthickness=1, highlightbackground=color_borde)
+    canvas_defensa.pack(fill="both", expand=True)
+
+    frame_derecha_def = ttk.Frame(paneles_defensa_frame)
+    frame_derecha_def.pack(side="right", fill="y", padx=(10, 0))
+
+    # Panel de Elementos Geométricos (Fase 4) - Movido
+    frame_elementos = tk.LabelFrame(frame_derecha_def, text=" Defensa Oral: Elementos ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
+    frame_elementos.pack(fill="x")
+
+    frame_solucionario = tk.LabelFrame(frame_derecha_def, text=" Solucionario ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
+    frame_solucionario.pack(fill="both", expand=True, pady=(10, 0))
+    
+    txt_solucionario = tk.Text(frame_solucionario, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=15, pady=15, highlightthickness=1, highlightbackground=color_borde)
+    
+    txt_solucionario.tag_configure("titulo", font=("Segoe UI", 13, "bold"), foreground="#1d4ed8", spacing1=5, spacing3=15, justify="center")
+    txt_solucionario.tag_configure("subtitulo", font=("Segoe UI", 11, "bold"), foreground="#334155", spacing1=15, spacing3=5)
+    txt_solucionario.tag_configure("formula", font=("Consolas", 10, "italic"), foreground="#64748b", lmargin1=20)
+    txt_solucionario.tag_configure("calculo", font=("Consolas", 10), foreground="#475569", lmargin1=20, spacing1=2)
+    txt_solucionario.tag_configure("resultado", font=("Consolas", 11, "bold"), foreground="#059669", lmargin1=20, spacing1=6, spacing3=5)
+    
+    def mostrar_soluciones():
+        if ultimo_grafico_def["coeficientes"] is not None and ultimo_grafico_def["tipo"] is not None:
+            lineas = generar_solucionario(ultimo_grafico_def["coeficientes"], ultimo_grafico_def["tipo"])
+            txt_solucionario.configure(state="normal")
+            txt_solucionario.delete("1.0", tk.END)
+            for texto, tag in lineas:
+                txt_solucionario.insert(tk.END, texto + "\n", tag)
+            txt_solucionario.configure(state="disabled")
+            txt_solucionario.pack(fill="both", expand=True)
+            btn_mostrar_solucionario.pack_forget()
+
+    btn_mostrar_solucionario = ttk.Button(frame_solucionario, text="📖 Mostrar Solucionario", style="Tool.TButton", command=mostrar_soluciones)
+    btn_mostrar_solucionario.pack(pady=10)
 
     campos_elementos = {}
     nombres_campos = [
@@ -302,13 +370,73 @@ def iniciar_interfaz():
         lbl.grid(row=i, column=0, sticky="e", pady=3, padx=5)
         entry = ttk.Entry(frame_elementos, width=25)
         entry.grid(row=i, column=1, sticky="w", pady=3, padx=5)
-        campos_elementos[clave] = {"label": lbl, "entry": entry}
+        lbl_feedback = ttk.Label(frame_elementos, text="", background=color_panel, font=("Segoe UI", 10, "bold"))
+        lbl_feedback.grid(row=i, column=2, sticky="w", pady=3, padx=5)
+        campos_elementos[clave] = {"label": lbl, "entry": entry, "feedback": lbl_feedback}
+
+    def parse_numbers(text):
+        return [float(x) for x in re.findall(r'-?\d+\.?\d*', text)]
+
+    def verificar_respuestas():
+        if not ultimo_grafico.get("coeficientes") or not ultimo_grafico.get("tipo"):
+            return
+            
+        valores_correctos = calcular_elementos_geometricos(ultimo_grafico["coeficientes"], ultimo_grafico["tipo"])
+        
+        for clave, valor_esperado in valores_correctos.items():
+            if clave not in campos_elementos or not campos_elementos[clave]["entry"].winfo_ismapped():
+                continue
+                
+            texto_ingresado = campos_elementos[clave]["entry"].get().strip()
+            if not texto_ingresado:
+                campos_elementos[clave]["feedback"].config(text="")
+                continue
+                
+            nums_ingresados = parse_numbers(texto_ingresado)
+            es_correcto = False
+            
+            def tolerante(a, b):
+                # Aumentamos la tolerancia a 0.2 para permitir que recortes (ej. 3.3 en vez de 3.345) pasen como válidos
+                return abs(a - b) <= 0.2
+
+            if isinstance(valor_esperado, tuple) and len(valor_esperado) == 2:
+                # Punto (x, y)
+                if len(nums_ingresados) == 2 and tolerante(nums_ingresados[0], valor_esperado[0]) and tolerante(nums_ingresados[1], valor_esperado[1]):
+                    es_correcto = True
+            elif isinstance(valor_esperado, list):
+                # Lista de puntos [(x1,y1), (x2,y2)]
+                if len(nums_ingresados) == len(valor_esperado) * 2:
+                    pares_ingresados = [(nums_ingresados[j], nums_ingresados[j+1]) for j in range(0, len(nums_ingresados), 2)]
+                    matches = 0
+                    for p_esp in valor_esperado:
+                        for p_ing in pares_ingresados:
+                            if tolerante(p_ing[0], p_esp[0]) and tolerante(p_ing[1], p_esp[1]):
+                                matches += 1
+                                pares_ingresados.remove(p_ing)
+                                break
+                    if matches == len(valor_esperado):
+                        es_correcto = True
+            elif isinstance(valor_esperado, (int, float)):
+                # Valor unico
+                if len(nums_ingresados) == 1 and tolerante(nums_ingresados[0], valor_esperado):
+                    es_correcto = True
+                    
+            if es_correcto:
+                campos_elementos[clave]["feedback"].config(text="✔ Correcto", foreground="#00aa00")
+            else:
+                campos_elementos[clave]["feedback"].config(text="✘ Incorrecto", foreground="#ff0000")
+
+    btn_verificar = ttk.Button(frame_elementos, text="✔ Verificar Respuestas", style="Accent.TButton", command=verificar_respuestas)
+    btn_verificar.grid(row=len(nombres_campos), column=0, columnspan=3, pady=(10, 5))
 
     def ocultar_campos():
         for clave in campos_elementos:
             campos_elementos[clave]["label"].grid_remove()
             campos_elementos[clave]["entry"].grid_remove()
+            campos_elementos[clave]["feedback"].grid_remove()
             campos_elementos[clave]["entry"].delete(0, tk.END)
+            campos_elementos[clave]["feedback"].config(text="")
+        btn_verificar.grid_remove()
 
     def mostrar_campos(claves):
         ocultar_campos()
@@ -316,6 +444,9 @@ def iniciar_interfaz():
             if clave in claves:
                 campos_elementos[clave]["label"].grid()
                 campos_elementos[clave]["entry"].grid()
+                campos_elementos[clave]["feedback"].grid()
+        if claves:
+            btn_verificar.grid()
     
     ocultar_campos()
 
@@ -347,11 +478,18 @@ def iniciar_interfaz():
     frame_resultados_tramos = tk.LabelFrame(paneles_tramos_frame, text=" Memoria de Cálculo y Defensa ", font=("Segoe UI", 12, "bold"), bg=color_panel, fg=color_header_secundario, padx=10, pady=10, highlightbackground=color_borde, highlightcolor=color_borde)
     frame_resultados_tramos.pack(side="right", fill="y")
 
-    txt_resultados_tramos = tk.Text(frame_resultados_tramos, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=10, pady=10, highlightthickness=1, highlightbackground=color_borde)
+    txt_resultados_tramos = tk.Text(frame_resultados_tramos, wrap="word", state="disabled", font=("Consolas", 10), width=45, bg="#f8fbff", fg=color_texto, relief="flat", padx=15, pady=15, highlightthickness=1, highlightbackground=color_borde)
     txt_resultados_tramos.pack(fill="both", expand=True)
+    
+    txt_resultados_tramos.tag_configure("titulo", font=("Segoe UI", 13, "bold"), foreground="#1d4ed8", spacing1=5, spacing3=15, justify="center")
+    txt_resultados_tramos.tag_configure("subtitulo", font=("Segoe UI", 11, "bold"), foreground="#334155", spacing1=15, spacing3=5)
+    txt_resultados_tramos.tag_configure("formula", font=("Consolas", 10, "italic"), foreground="#64748b", lmargin1=20)
+    txt_resultados_tramos.tag_configure("calculo", font=("Consolas", 10), foreground="#475569", lmargin1=20, spacing1=2)
+    txt_resultados_tramos.tag_configure("resultado", font=("Consolas", 11, "bold"), foreground="#059669", lmargin1=20, spacing1=6, spacing3=5)
 
     # Estados de gráficos para redibujo
-    ultimo_grafico = {"coeficientes": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False}
+    ultimo_grafico = {"coeficientes": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False, "tipo": None}
+    ultimo_grafico_def = {"coeficientes": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False, "tipo": None}
     ultimo_grafico_tramos = {"analisis": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False}
 
     def redibujar_grafico():
@@ -365,6 +503,18 @@ def iniciar_interfaz():
         if ultimo_grafico["redibujo"] is not None:
             canvas_grafico.after_cancel(ultimo_grafico["redibujo"])
         ultimo_grafico["redibujo"] = canvas_grafico.after(120, redibujar_grafico)
+
+    def redibujar_grafico_def():
+        ultimo_grafico_def["redibujo"] = None
+        if ultimo_grafico_def["coeficientes"] is not None:
+            graficar_conica(canvas_defensa, ultimo_grafico_def["coeficientes"], ultimo_grafico_def["vista"], mostrar_nombres=False)
+
+    def preparar_redibujo_def(_evento):
+        if ultimo_grafico_def["coeficientes"] is None:
+            return
+        if ultimo_grafico_def["redibujo"] is not None:
+            canvas_defensa.after_cancel(ultimo_grafico_def["redibujo"])
+        ultimo_grafico_def["redibujo"] = canvas_defensa.after(120, redibujar_grafico_def)
 
     def redibujar_grafico_tramos():
         ultimo_grafico_tramos["redibujo"] = None
@@ -441,6 +591,12 @@ def iniciar_interfaz():
         ultimo_grafico["vista"] = obtener_vista_conica(ultimo_grafico["coeficientes"])
         redibujar_grafico()
 
+    def reiniciar_vista_def():
+        if ultimo_grafico_def["coeficientes"] is None:
+            return
+        ultimo_grafico_def["vista"] = obtener_vista_conica(ultimo_grafico_def["coeficientes"])
+        redibujar_grafico_def()
+
     def reiniciar_vista_tramos():
         if ultimo_grafico_tramos["analisis"] is None:
             return
@@ -461,8 +617,18 @@ def iniciar_interfaz():
             resultado_conica = analizar_conica(digitos, resultado["dv_ingresado"])
             lineas_conicas.extend(formatear_resultado_conica(resultado_conica))
             ultimo_grafico["coeficientes"] = resultado_conica["coeficientes"]
+            ultimo_grafico["tipo"] = resultado_conica.get("tipo", "")
             ultimo_grafico["vista"] = obtener_vista_conica(ultimo_grafico["coeficientes"])
             graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"], ultimo_grafico["vista"])
+            
+            # Defensa
+            ultimo_grafico_def["coeficientes"] = resultado_conica["coeficientes"]
+            ultimo_grafico_def["tipo"] = resultado_conica.get("tipo", "")
+            ultimo_grafico_def["vista"] = obtener_vista_conica(ultimo_grafico_def["coeficientes"])
+            graficar_conica(canvas_defensa, ultimo_grafico_def["coeficientes"], ultimo_grafico_def["vista"], mostrar_nombres=False)
+            
+            txt_solucionario.pack_forget()
+            btn_mostrar_solucionario.pack(pady=10)
             
             # Mostrar los inputs correspondientes a la cónica
             tipo_conica = resultado_conica.get("tipo", "").lower()
@@ -487,7 +653,16 @@ def iniciar_interfaz():
             ultimo_grafico["arrastre"] = None
             ultimo_grafico["movio"] = False
             canvas_grafico.delete("all")
+            
+            ultimo_grafico_def["coeficientes"] = None
+            ultimo_grafico_def["vista"] = None
+            ultimo_grafico_def["arrastre"] = None
+            ultimo_grafico_def["movio"] = False
+            canvas_defensa.delete("all")
+            
             ocultar_campos()
+            txt_solucionario.pack_forget()
+            btn_mostrar_solucionario.pack_forget()
             
             ultimo_grafico_tramos["analisis"] = None
             ultimo_grafico_tramos["vista"] = None
@@ -498,20 +673,26 @@ def iniciar_interfaz():
         # Actualizar panel de Cónicas
         txt_resultados.configure(state="normal")
         txt_resultados.delete("1.0", tk.END)
-        txt_resultados.insert(tk.END, "\n".join(lineas_conicas))
+        for texto, tag in lineas_conicas:
+            txt_resultados.insert(tk.END, texto + "\n", tag)
         txt_resultados.configure(state="disabled")
 
         # Actualizar panel de Tramos
         txt_resultados_tramos.configure(state="normal")
         txt_resultados_tramos.delete("1.0", tk.END)
-        txt_resultados_tramos.insert(tk.END, "\n".join(lineas_tramos))
+        for texto, tag in lineas_tramos:
+            txt_resultados_tramos.insert(tk.END, texto + "\n", tag)
         txt_resultados_tramos.configure(state="disabled")
 
     btn_calcular.config(command=mostrar_rut)
     btn_reset_conica.config(command=reiniciar_vista_conica)
+    btn_reset_def.config(command=reiniciar_vista_def)
     btn_reset_tramos.config(command=reiniciar_vista_tramos)
+    
     canvas_grafico.bind("<Configure>", preparar_redibujo)
+    canvas_defensa.bind("<Configure>", preparar_redibujo_def)
     canvas_tramos.bind("<Configure>", preparar_redibujo_tramos)
+    
     canvas_grafico.bind("<MouseWheel>", lambda e: aplicar_zoom(canvas_grafico, ultimo_grafico, redibujar_grafico, e))
     canvas_grafico.bind("<Button-4>", lambda e: aplicar_zoom(canvas_grafico, ultimo_grafico, redibujar_grafico, e))
     canvas_grafico.bind("<Button-5>", lambda e: aplicar_zoom(canvas_grafico, ultimo_grafico, redibujar_grafico, e))
@@ -519,6 +700,15 @@ def iniciar_interfaz():
     canvas_grafico.bind("<B1-Motion>", lambda e: mover_vista(canvas_grafico, ultimo_grafico, e))
     canvas_grafico.bind("<ButtonRelease-1>", lambda e: terminar_arrastre(ultimo_grafico, redibujar_grafico, e))
     canvas_grafico.bind("<Double-Button-1>", lambda _e: reiniciar_vista_conica())
+    
+    canvas_defensa.bind("<MouseWheel>", lambda e: aplicar_zoom(canvas_defensa, ultimo_grafico_def, redibujar_grafico_def, e))
+    canvas_defensa.bind("<Button-4>", lambda e: aplicar_zoom(canvas_defensa, ultimo_grafico_def, redibujar_grafico_def, e))
+    canvas_defensa.bind("<Button-5>", lambda e: aplicar_zoom(canvas_defensa, ultimo_grafico_def, redibujar_grafico_def, e))
+    canvas_defensa.bind("<ButtonPress-1>", lambda e: iniciar_arrastre(ultimo_grafico_def, e))
+    canvas_defensa.bind("<B1-Motion>", lambda e: mover_vista(canvas_defensa, ultimo_grafico_def, e))
+    canvas_defensa.bind("<ButtonRelease-1>", lambda e: terminar_arrastre(ultimo_grafico_def, redibujar_grafico_def, e))
+    canvas_defensa.bind("<Double-Button-1>", lambda _e: reiniciar_vista_def())
+    
     canvas_tramos.bind("<MouseWheel>", lambda e: aplicar_zoom(canvas_tramos, ultimo_grafico_tramos, redibujar_grafico_tramos, e))
     canvas_tramos.bind("<Button-4>", lambda e: aplicar_zoom(canvas_tramos, ultimo_grafico_tramos, redibujar_grafico_tramos, e))
     canvas_tramos.bind("<Button-5>", lambda e: aplicar_zoom(canvas_tramos, ultimo_grafico_tramos, redibujar_grafico_tramos, e))

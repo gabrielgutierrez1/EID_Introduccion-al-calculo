@@ -1,4 +1,4 @@
-def marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, limites_visibles):
+def marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, limites_visibles, mostrar_nombres=True):
     A = coeficientes["A"]
     B = coeficientes["B"]
     C = coeficientes["C"]
@@ -42,4 +42,5 @@ def marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, limites_visi
         
     dibujar_radio(h, k, r, "#0000ff")
     dibujar_punto_destacado(h, k, "#ff0000")
-    dibujar_leyenda()
+    if mostrar_nombres:
+        dibujar_leyenda()
