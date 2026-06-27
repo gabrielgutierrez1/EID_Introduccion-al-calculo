@@ -1,4 +1,5 @@
 from .general_a_canonica import transformar_a_canonica
+from .utils import formatear_numero
 
 
 def valor_v(dv):
@@ -11,12 +12,6 @@ def valor_v(dv):
 
 def dividir(numerador, denominador):
     return numerador / denominador
-
-
-def formatear_numero(numero):
-    if numero == int(numero):
-        return str(int(numero))
-    return f"{numero:.4f}".rstrip("0").rstrip(".")
 
 
 def construir_coeficientes(digitos, dv):

@@ -1,3 +1,8 @@
+from elementos_conicas.elem_parabola import marcar_elementos_parabola
+from elementos_conicas.elem_circunferencia import marcar_elementos_circunferencia
+from elementos_conicas.elem_elipse import marcar_elementos_elipse
+from elementos_conicas.elem_hiperbola import marcar_elementos_hiperbola
+
 def obtener_vista_conica(coeficientes):
     A = coeficientes["A"]
     B = coeficientes["B"]
@@ -202,45 +207,21 @@ def graficar_conica(canvas, coeficientes, vista=None, mostrar_nombres=True):
 
     if (A == 0 and B != 0) or (A != 0 and B == 0):
         try:
-            import sys
-            import os
-            PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
-            if PROYECTO_RAIZ not in sys.path:
-                sys.path.insert(0, PROYECTO_RAIZ)
-            from elementos_conicas.elem_parabola import marcar_elementos_parabola
             marcar_elementos_parabola(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max), mostrar_nombres)
         except Exception as e:
             print(f"No se pudo marcar elementos de la parabola: {e}")
     elif A == B and A != 0:
         try:
-            import sys
-            import os
-            PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
-            if PROYECTO_RAIZ not in sys.path:
-                sys.path.insert(0, PROYECTO_RAIZ)
-            from elementos_conicas.elem_circunferencia import marcar_elementos_circunferencia
             marcar_elementos_circunferencia(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max), mostrar_nombres)
         except Exception as e:
             print(f"No se pudo marcar elementos de la circunferencia: {e}")
     elif A * B < 0:
         try:
-            import sys
-            import os
-            PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
-            if PROYECTO_RAIZ not in sys.path:
-                sys.path.insert(0, PROYECTO_RAIZ)
-            from elementos_conicas.elem_hiperbola import marcar_elementos_hiperbola
             marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max), mostrar_nombres)
         except Exception as e:
             print(f"No se pudo marcar elementos de la hiperbola: {e}")
     elif A * B > 0 and A != B:
         try:
-            import sys
-            import os
-            PROYECTO_RAIZ = os.path.dirname(os.path.dirname(__file__))
-            if PROYECTO_RAIZ not in sys.path:
-                sys.path.insert(0, PROYECTO_RAIZ)
-            from elementos_conicas.elem_elipse import marcar_elementos_elipse
             marcar_elementos_elipse(canvas, coeficientes, a_pixels, (x_min, x_max, y_min, y_max), mostrar_nombres)
         except Exception as e:
             print(f"No se pudo marcar elementos de la elipse: {e}")
