@@ -70,9 +70,9 @@ def marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, limites_visibles)
         canvas.create_oval(x_base + 10, y_base + 34, x_base + 20, y_base + 44, fill="#ff0000", outline="black")
         canvas.create_text(x_base + 30, y_base + 39, text="Vértices", fill="#172554", anchor="w", font=("Segoe UI", 9, "bold"))
         
-        # Vértices Sec
+        # Extremos del eje conjugado
         canvas.create_oval(x_base + 10, y_base + 56, x_base + 20, y_base + 66, fill="#d946ef", outline="black")
-        canvas.create_text(x_base + 30, y_base + 61, text="Vértices Secundarios", fill="#172554", anchor="w", font=("Segoe UI", 9, "bold"))
+        canvas.create_text(x_base + 30, y_base + 61, text="Eje conjugado", fill="#172554", anchor="w", font=("Segoe UI", 9, "bold"))
         
         # Focos
         canvas.create_oval(x_base + 10, y_base + 78, x_base + 20, y_base + 88, fill="#00aa00", outline="black")
@@ -93,7 +93,7 @@ def marcar_elementos_hiperbola(canvas, coeficientes, a_pixels, limites_visibles)
         dibujar_punto_destacado(h, k - a, "#ff0000")
         dibujar_punto_destacado(h, k + a, "#ff0000")
 
-    # 3. Dibujar vértices secundarios 
+    # 3. Dibujar extremos del eje conjugado
     if es_horizontal:
         dibujar_punto_destacado(h, k + b, "#d946ef")
         dibujar_punto_destacado(h, k - b, "#d946ef")
