@@ -18,7 +18,9 @@ from gui.graficos import (
     obtener_vista_tramos,
 )
 import threading
+import re
 from src.buscar_ruts import buscar_casos_prueba
+from src.elementos import calcular_elementos_geometricos
 
 
 
@@ -302,13 +304,72 @@ def iniciar_interfaz():
         lbl.grid(row=i, column=0, sticky="e", pady=3, padx=5)
         entry = ttk.Entry(frame_elementos, width=25)
         entry.grid(row=i, column=1, sticky="w", pady=3, padx=5)
-        campos_elementos[clave] = {"label": lbl, "entry": entry}
+        lbl_feedback = ttk.Label(frame_elementos, text="", background=color_panel, font=("Segoe UI", 10, "bold"))
+        lbl_feedback.grid(row=i, column=2, sticky="w", pady=3, padx=5)
+        campos_elementos[clave] = {"label": lbl, "entry": entry, "feedback": lbl_feedback}
+
+    def parse_numbers(text):
+        return [float(x) for x in re.findall(r'-?\d+\.?\d*', text)]
+
+    def verificar_respuestas():
+        if not ultimo_grafico.get("coeficientes") or not ultimo_grafico.get("tipo"):
+            return
+            
+        valores_correctos = calcular_elementos_geometricos(ultimo_grafico["coeficientes"], ultimo_grafico["tipo"])
+        
+        for clave, valor_esperado in valores_correctos.items():
+            if clave not in campos_elementos or not campos_elementos[clave]["entry"].winfo_ismapped():
+                continue
+                
+            texto_ingresado = campos_elementos[clave]["entry"].get().strip()
+            if not texto_ingresado:
+                campos_elementos[clave]["feedback"].config(text="")
+                continue
+                
+            nums_ingresados = parse_numbers(texto_ingresado)
+            es_correcto = False
+            
+            def tolerante(a, b):
+                return abs(a - b) < 0.05
+
+            if isinstance(valor_esperado, tuple) and len(valor_esperado) == 2:
+                # Punto (x, y)
+                if len(nums_ingresados) == 2 and tolerante(nums_ingresados[0], valor_esperado[0]) and tolerante(nums_ingresados[1], valor_esperado[1]):
+                    es_correcto = True
+            elif isinstance(valor_esperado, list):
+                # Lista de puntos [(x1,y1), (x2,y2)]
+                if len(nums_ingresados) == len(valor_esperado) * 2:
+                    pares_ingresados = [(nums_ingresados[j], nums_ingresados[j+1]) for j in range(0, len(nums_ingresados), 2)]
+                    matches = 0
+                    for p_esp in valor_esperado:
+                        for p_ing in pares_ingresados:
+                            if tolerante(p_ing[0], p_esp[0]) and tolerante(p_ing[1], p_esp[1]):
+                                matches += 1
+                                pares_ingresados.remove(p_ing)
+                                break
+                    if matches == len(valor_esperado):
+                        es_correcto = True
+            elif isinstance(valor_esperado, (int, float)):
+                # Valor unico
+                if len(nums_ingresados) == 1 and tolerante(nums_ingresados[0], valor_esperado):
+                    es_correcto = True
+                    
+            if es_correcto:
+                campos_elementos[clave]["feedback"].config(text="✔ Correcto", foreground="#00aa00")
+            else:
+                campos_elementos[clave]["feedback"].config(text="✘ Incorrecto", foreground="#ff0000")
+
+    btn_verificar = ttk.Button(frame_elementos, text="✔ Verificar Respuestas", style="Accent.TButton", command=verificar_respuestas)
+    btn_verificar.grid(row=len(nombres_campos), column=0, columnspan=3, pady=(10, 5))
 
     def ocultar_campos():
         for clave in campos_elementos:
             campos_elementos[clave]["label"].grid_remove()
             campos_elementos[clave]["entry"].grid_remove()
+            campos_elementos[clave]["feedback"].grid_remove()
             campos_elementos[clave]["entry"].delete(0, tk.END)
+            campos_elementos[clave]["feedback"].config(text="")
+        btn_verificar.grid_remove()
 
     def mostrar_campos(claves):
         ocultar_campos()
@@ -316,6 +377,9 @@ def iniciar_interfaz():
             if clave in claves:
                 campos_elementos[clave]["label"].grid()
                 campos_elementos[clave]["entry"].grid()
+                campos_elementos[clave]["feedback"].grid()
+        if claves:
+            btn_verificar.grid()
     
     ocultar_campos()
 
@@ -351,7 +415,7 @@ def iniciar_interfaz():
     txt_resultados_tramos.pack(fill="both", expand=True)
 
     # Estados de gráficos para redibujo
-    ultimo_grafico = {"coeficientes": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False}
+    ultimo_grafico = {"coeficientes": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False, "tipo": None}
     ultimo_grafico_tramos = {"analisis": None, "redibujo": None, "vista": None, "arrastre": None, "movio": False}
 
     def redibujar_grafico():
@@ -461,6 +525,7 @@ def iniciar_interfaz():
             resultado_conica = analizar_conica(digitos, resultado["dv_ingresado"])
             lineas_conicas.extend(formatear_resultado_conica(resultado_conica))
             ultimo_grafico["coeficientes"] = resultado_conica["coeficientes"]
+            ultimo_grafico["tipo"] = resultado_conica.get("tipo", "")
             ultimo_grafico["vista"] = obtener_vista_conica(ultimo_grafico["coeficientes"])
             graficar_conica(canvas_grafico, ultimo_grafico["coeficientes"], ultimo_grafico["vista"])
             
