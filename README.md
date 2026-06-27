@@ -27,12 +27,6 @@ Luego ingresar un RUT chileno con cuerpo de 8 digitos. Formatos aceptados:
 219290098
 ```
 
-La version por consola sigue disponible desde la funcion `main_consola`:
-
-```powershell
-python3 -c "from main import main_consola; main_consola()"
-```
-
 ## Estructura del proyecto
 
 ```text
@@ -40,14 +34,27 @@ EID_Introduccion-al-calculo/
 ├─ main.py
 ├─ gui/
 │  ├─ __init__.py
+│  ├─ dibujo_utils.py
+│  ├─ formatters.py
+│  ├─ graficos.py
 │  └─ gui.py
 ├─ src/
 │  ├─ __init__.py
-│  ├─ rut.py
-│  ├─ conicas.py
+│  ├─ buscar_ruts.py
 │  ├─ canonica_a_general.py
+│  ├─ conicas.py
+│  ├─ elementos.py
+│  ├─ funciones_por_tramos.py
 │  ├─ general_a_canonica.py
-│  └─ salida.py
+│  ├─ rut.py
+│  ├─ salida.py
+│  ├─ solucionario.py
+│  └─ utils.py
+├─ elementos_conicas/
+│  ├─ elem_circunferencia.py
+│  ├─ elem_elipse.py
+│  ├─ elem_hiperbola.py
+│  └─ elem_parabola.py
 ├─ .gitignore
 └─ README.md
 ```
@@ -56,102 +63,52 @@ EID_Introduccion-al-calculo/
 
 ### `main.py`
 
-Archivo principal del programa. Por defecto abre la interfaz grafica con `main()`. Tambien conserva `main_consola()` para ejecutar el flujo completo por terminal:
+Archivo principal del programa. Ejecuta la funcion `main()` que inicia la interfaz grafica de la aplicacion.
 
-1. Muestra el formato de RUT permitido.
-2. Pide el RUT al usuario.
-3. Valida el RUT.
-4. Muestra el procedimiento de validacion modulo 11.
-5. Extrae los digitos del cuerpo del RUT.
-6. Construye y clasifica la conica.
-7. Muestra la ecuacion general, la forma canonica y el procedimiento inverso.
+### `gui/` (Interfaz grafica)
 
-### `gui/gui.py`
+- `gui.py`: Interfaz grafica principal (ventanas, botones, eventos).
+- `formatters.py`: Logica de formato de texto y memoria de calculo para mostrar en la interfaz.
+- `graficos.py`: Renderizador grafico para las conicas.
+- `dibujo_utils.py`: Primitivas y configuraciones para dibujar en el lienzo.
 
-Interfaz grafica hecha con `tkinter`.
+### `src/` (Logica principal)
 
-Incluye:
+- `rut.py`: Limpieza, validacion y extraccion de digitos del RUT mediante modulo 11.
+- `conicas.py`: Construccion de la ecuacion general de la conica y clasificacion.
+- `elementos.py`: Centralizacion de calculos matematicos de los elementos de las conicas (centro, focos, vertices).
+- `utils.py`: Funciones utilitarias generales, como el formateo numerico.
+- `canonica_a_general.py`: Procedimiento inverso (forma canonica a general).
+- `general_a_canonica.py`: Procedimiento directo (forma general a canonica completando cuadrados).
+- `salida.py`: Funciones para mostrar los resultados y calculos detallados en consola.
+- `funciones_por_tramos.py`: Modulo para el analisis de funciones por tramos, limites y continuidad.
+- `solucionario.py`: Generador de solucionarios automatizados.
+- `buscar_ruts.py`: Utilidad para buscar RUTs que generen conicas especificas.
 
-- Ventana principal.
-- Campo para ingresar RUT.
-- Boton de analisis.
-- Area de resultados.
-- Grafico de la conica.
-- Conexion con la validacion de RUT y el analisis de conicas.
+### `elementos_conicas/`
 
-### `src/rut.py`
-
-Contiene la logica relacionada con el RUT:
-
-- Limpieza del formato.
-- Validacion de formatos aceptados.
-- Separacion entre cuerpo y digito verificador.
-- Validacion mediante modulo 11.
-- Registro paso a paso del calculo del digito verificador.
-- Extraccion de los digitos del cuerpo.
-
-### `src/conicas.py`
-
-Construye la ecuacion:
-
-```text
-Ax^2 + By^2 + Cx + Dy + E = 0
-```
-
-Tambien aplica las reglas especiales del enunciado y clasifica la conica como:
-
-- Circunferencia.
-- Elipse.
-- Hiperbola.
-- Parabola.
-
-Ademas contiene funciones para:
-
-- Formatear numeros para la salida.
-- Construir la ecuacion general.
-- Coordinar el analisis completo de la conica.
-
-### `src/canonica_a_general.py`
-
-Contiene el procedimiento inverso para transformar la forma canonica de una conica a su ecuacion general.
-
-### `src/general_a_canonica.py`
-
-Contiene el procedimiento para transformar la ecuacion general de una conica a forma canonica completando cuadrados.
-
-### `src/salida.py`
-
-Contiene funciones para mostrar en consola:
-
-- Resultado de la validacion del RUT.
-- Procedimiento modulo 11.
-- Construccion de coeficientes de la conica.
-- Ecuacion general.
-- Clasificacion.
-- Transformacion a forma canonica.
-- Transformacion inversa de forma canonica a general.
+Modulos especificos para calcular las propiedades matematicas de cada tipo de conica:
+- `elem_circunferencia.py`
+- `elem_elipse.py`
+- `elem_hiperbola.py`
+- `elem_parabola.py`
 
 ## Funcionalidades implementadas
 
 - Validacion de RUT chileno mediante modulo 11.
-- Aceptacion de RUT con puntos y guion, solo guion o sin separadores.
-- Procedimiento paso a paso de validacion.
-- Extraccion de digitos `d1` a `d8`.
-- Calculo de coeficientes `A`, `B`, `C`, `D`, `E`.
-- Conversion del digito verificador a valor `v`, considerando `K = 10` y `0 = 11`.
-- Aplicacion de reglas especiales para obtener distintas conicas.
-- Clasificacion automatica de la conica.
-- Impresion ordenada de la ecuacion general.
-- Transformacion paso a paso desde forma general a forma canonica.
-- Procedimiento inverso desde forma canonica a forma general.
-- Interfaz grafica conectada con validacion, analisis y grafica de la conica.
+- Aceptacion de multiples formatos de RUT.
+- Procedimiento paso a paso de validacion y extraccion de digitos.
+- Construccion y clasificacion automatica de ecuaciones generales de conicas.
+- Calculo de elementos matematicos de las conicas (centro, focos, vertices, etc.).
+- Transformacion bidireccional entre forma general y canonica paso a paso.
+- Interfaz grafica completa con renderizado interactivo de la conica y memoria de calculo.
+- Analisis de funciones por tramos, limites laterales, continuidad y discontinuidades.
+- Generador de solucionarios y utilidades de busqueda de RUTs.
+- Arquitectura limpia con clara separacion entre logica matematica, formateo de texto y renderizado de interfaz.
 
 ## Funcionalidades pendientes
 
-- Modulo de funciones por tramos.
-- Analisis de limites laterales, continuidad y discontinuidades.
-- Mejorar la interfaz grafica o evaluar una version web.
-
+- Evaluar una version web de la aplicacion.
 ## Ejemplo
 
 Entrada:
