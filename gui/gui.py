@@ -386,7 +386,8 @@ def iniciar_interfaz():
             es_correcto = False
             
             def tolerante(a, b):
-                return abs(a - b) < 0.05
+                # Aumentamos la tolerancia a 0.2 para permitir que recortes (ej. 3.3 en vez de 3.345) pasen como válidos
+                return abs(a - b) <= 0.2
 
             if isinstance(valor_esperado, tuple) and len(valor_esperado) == 2:
                 # Punto (x, y)
